@@ -2,7 +2,11 @@ import { useState } from 'react';
 import { FAQS } from '../data';
 import { Plus, Minus, HelpCircle } from 'lucide-react';
 
-export default function FAQSection() {
+interface FAQSectionProps {
+  onWriteToExpert?: () => void;
+}
+
+export default function FAQSection({ onWriteToExpert }: FAQSectionProps) {
   const [openIndex, setOpenIndex] = useState<number | null>(0);
 
   const toggleIndex = (idx: number) => {
@@ -31,13 +35,17 @@ export default function FAQSection() {
               <div className="p-5 rounded-2xl bg-white/5 border border-white/10 space-y-3">
                 <p className="text-xs text-emerald-300 font-bold">Have another specific agricultural question?</p>
                 <p className="text-xs text-white/70">Our support desk is online from Mon – Sat, 8:00 AM – 6:00 PM EAT to answer complex veterinary or soil issues.</p>
-                <a
+                <button
                   id="faq-contact-link"
-                  href="#contact-form-section"
-                  className="inline-flex items-center text-xs font-bold text-emerald-400 hover:text-emerald-300 transition"
+                  onClick={() => {
+                    if (onWriteToExpert) {
+                      onWriteToExpert();
+                    }
+                  }}
+                  className="inline-flex items-center text-xs font-bold text-emerald-400 hover:text-emerald-300 transition cursor-pointer"
                 >
                   Write to an expert →
-                </a>
+                </button>
               </div>
             </div>
           </div>

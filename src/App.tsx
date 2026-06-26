@@ -1,11 +1,12 @@
-import { useState, useEffect, FormEvent } from 'react';
-import { Product, CartItem } from './types';
+import React, { useState, useEffect, FormEvent } from 'react';
+import { Product, CartItem, BlogPost } from './types';
 import HeroSlider from './components/HeroSlider';
 import ProductCatalog from './components/ProductCatalog';
 import CartDrawer from './components/CartDrawer';
-import BookingModal from './components/BookingModal';
 import FAQSection from './components/FAQSection';
 import BlogSection from './components/BlogSection';
+import BlogDetail from './components/BlogDetail';
+import GetInTouchPage from './components/GetInTouchPage';
 import { 
   Phone, MapPin, Mail, Clock, Facebook, Instagram, Linkedin, 
   ChevronRight, ArrowUp, Send, CheckCircle, Award, Users, 
@@ -16,21 +17,15 @@ import {
 export default function App() {
   const [cartItems, setCartItems] = useState<CartItem[]>([]);
   const [isCartOpen, setIsCartOpen] = useState(false);
-  const [isBookingOpen, setIsBookingOpen] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  const [bookingInitialService, setBookingInitialService] = useState<'vet' | 'soil' | 'agronomy' | 'delivery'>('vet');
+  const [selectedBlogPost, setSelectedBlogPost] = useState<BlogPost | null>(null);
+  const [isGetInTouchActive, setIsGetInTouchActive] = useState(false);
+  const [getInTouchTab, setGetInTouchTab] = useState<'inquiry' | 'support'>('inquiry');
+  const [getInTouchService, setGetInTouchService] = useState<'vet' | 'soil' | 'agronomy' | 'delivery'>('vet');
   
   // Newsletter state
   const [newsletterEmail, setNewsletterEmail] = useState('');
   const [newsletterSubscribed, setNewsletterSubscribed] = useState(false);
-  
-  // Contact Form state
-  const [contactName, setContactName] = useState('');
-  const [contactPhone, setContactPhone] = useState('');
-  const [contactEmail, setContactEmail] = useState('');
-  const [contactMsg, setContactMsg] = useState('');
-  const [contactSuccess, setContactSuccess] = useState(false);
-  const [contactLoading, setContactLoading] = useState(false);
 
   // Counter states (animated when loaded)
   const [yearsCount, setYearsCount] = useState(0);
@@ -106,8 +101,11 @@ export default function App() {
   };
 
   const handleOpenBooking = (service: 'vet' | 'soil' | 'agronomy' | 'delivery') => {
-    setBookingInitialService(service);
-    setIsBookingOpen(true);
+    setGetInTouchTab('support');
+    setGetInTouchService(service);
+    setIsGetInTouchActive(true);
+    setSelectedBlogPost(null);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   const handleNewsletterSubmit = (e: FormEvent) => {
@@ -118,20 +116,29 @@ export default function App() {
     }
   };
 
-  const handleContactSubmit = (e: FormEvent) => {
-    e.preventDefault();
-    if (!contactName.trim() || !contactPhone.trim()) return;
+  const handleNavLinkClick = (e: React.MouseEvent<HTMLAnchorElement>, targetId: string) => {
+    if (selectedBlogPost || isGetInTouchActive) {
+      e.preventDefault();
+      setSelectedBlogPost(null);
+      setIsGetInTouchActive(false);
+      setTimeout(() => {
+        const el = document.getElementById(targetId);
+        if (el) {
+          el.scrollIntoView({ behavior: 'smooth' });
+        } else {
+          window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+      }, 100);
+    }
+  };
 
-    setContactLoading(true);
-    setTimeout(() => {
-      setContactLoading(false);
-      setContactSuccess(true);
-      setContactName('');
-      setContactPhone('');
-      setContactEmail('');
-      setContactMsg('');
-      setTimeout(() => setContactSuccess(false), 5000);
-    }, 1500);
+  const handleLogoClick = (e: React.MouseEvent<HTMLAnchorElement>) => {
+    if (selectedBlogPost || isGetInTouchActive) {
+      e.preventDefault();
+      setSelectedBlogPost(null);
+      setIsGetInTouchActive(false);
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
   };
 
   const cartTotalQty = cartItems.reduce((acc, item) => acc + item.quantity, 0);
@@ -175,7 +182,7 @@ export default function App() {
         <div className="container mx-auto px-6 py-4 flex items-center justify-between">
           
           {/* Logo Brand */}
-          <a href="#" className="flex items-center space-x-3 shrink-0 group">
+          <a href="#" onClick={handleLogoClick} className="flex items-center space-x-3 shrink-0 group">
             <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-emerald-600 to-emerald-900 flex items-center justify-center text-white font-black font-serif text-xl shadow-md group-hover:scale-105 transition-all">
               M
             </div>
@@ -187,37 +194,50 @@ export default function App() {
 
           {/* Core Scroll Links */}
           <nav className="hidden lg:flex items-center space-x-1">
-            <a href="#hero-slider-container" className="px-4 py-2 rounded-full text-xs font-bold text-emerald-950 hover:bg-emerald-50 hover:text-emerald-700 transition">
+            <a href="#hero-slider-container" onClick={(e) => handleNavLinkClick(e, 'hero-slider-container')} className="px-4 py-2 rounded-full text-xs font-bold text-emerald-950 hover:bg-emerald-50 hover:text-emerald-700 transition">
               Home
             </a>
-            <a href="#about-us-section" className="px-4 py-2 rounded-full text-xs font-bold text-emerald-950 hover:bg-emerald-50 hover:text-emerald-700 transition">
+            <a href="#about-us-section" onClick={(e) => handleNavLinkClick(e, 'about-us-section')} className="px-4 py-2 rounded-full text-xs font-bold text-emerald-950 hover:bg-emerald-50 hover:text-emerald-700 transition">
               About Us
             </a>
-            <a href="#products-catalog-section" className="px-4 py-2 rounded-full text-xs font-bold text-emerald-950 hover:bg-emerald-50 hover:text-emerald-700 transition">
+            <a href="#products-catalog-section" onClick={(e) => handleNavLinkClick(e, 'products-catalog-section')} className="px-4 py-2 rounded-full text-xs font-bold text-emerald-950 hover:bg-emerald-50 hover:text-emerald-700 transition">
               Shop Agrochemicals
             </a>
-            <a href="#services-highlights-section" className="px-4 py-2 rounded-full text-xs font-bold text-emerald-950 hover:bg-emerald-50 hover:text-emerald-700 transition">
+            <a href="#services-highlights-section" onClick={(e) => handleNavLinkClick(e, 'services-highlights-section')} className="px-4 py-2 rounded-full text-xs font-bold text-emerald-950 hover:bg-emerald-50 hover:text-emerald-700 transition">
               Farming Services
             </a>
-            <a href="#faq-section-wrapper" className="px-4 py-2 rounded-full text-xs font-bold text-emerald-950 hover:bg-emerald-50 hover:text-emerald-700 transition">
+            <a href="#faq-section-wrapper" onClick={(e) => handleNavLinkClick(e, 'faq-section-wrapper')} className="px-4 py-2 rounded-full text-xs font-bold text-emerald-950 hover:bg-emerald-50 hover:text-emerald-700 transition">
               FAQ
             </a>
-            <a href="#blog-section-wrapper" className="px-4 py-2 rounded-full text-xs font-bold text-emerald-950 hover:bg-emerald-50 hover:text-emerald-700 transition">
+            <a href="#blog-section-wrapper" onClick={(e) => handleNavLinkClick(e, 'blog-section-wrapper')} className="px-4 py-2 rounded-full text-xs font-bold text-emerald-950 hover:bg-emerald-50 hover:text-emerald-700 transition">
               Academy Blog
             </a>
-            <a href="#contact-form-section" className="px-4 py-2 rounded-full text-xs font-bold text-emerald-950 hover:bg-emerald-50 hover:text-emerald-700 transition">
+            <button 
+              onClick={() => {
+                setIsGetInTouchActive(true);
+                setGetInTouchTab('inquiry');
+                setSelectedBlogPost(null);
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+              }} 
+              className="px-4 py-2 rounded-full text-xs font-bold text-emerald-950 hover:bg-emerald-50 hover:text-emerald-700 transition cursor-pointer"
+            >
               Get In Touch
-            </a>
+            </button>
           </nav>
 
           {/* Action Trigger Buttons */}
           <div className="flex items-center space-x-2 sm:space-x-3">
             <button
               id="header-booking-btn"
-              onClick={() => handleOpenBooking('vet')}
-              className="hidden sm:inline-flex px-4 py-2 rounded-full text-xs font-bold border border-emerald-900/15 bg-emerald-50 hover:bg-emerald-100 text-emerald-950 transition"
+              onClick={() => {
+                setIsGetInTouchActive(true);
+                setGetInTouchTab('support');
+                setSelectedBlogPost(null);
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+              }}
+              className="hidden sm:inline-flex px-4 py-2 rounded-full text-xs font-bold border border-emerald-900/15 bg-emerald-50 hover:bg-emerald-100 text-emerald-950 transition cursor-pointer"
             >
-              Consultation Desk
+              Support Desk
             </button>
             
             <button
@@ -258,27 +278,44 @@ export default function App() {
                 { label: 'Farming Services', href: '#services-highlights-section' },
                 { label: 'FAQ', href: '#faq-section-wrapper' },
                 { label: 'Academy Blog', href: '#blog-section-wrapper' },
-                { label: 'Get In Touch', href: '#contact-form-section' },
               ].map((link) => (
                 <a
                   key={link.label}
                   href={link.href}
-                  onClick={() => setIsMobileMenuOpen(false)}
+                  onClick={(e) => {
+                    setIsMobileMenuOpen(false);
+                    handleNavLinkClick(e, link.href.slice(1));
+                  }}
                   className="px-4 py-2.5 rounded-xl text-xs font-bold text-emerald-950 hover:bg-emerald-50 hover:text-emerald-700 transition"
                 >
                   {link.label}
                 </a>
               ))}
+              <button
+                onClick={() => {
+                  setIsMobileMenuOpen(false);
+                  setIsGetInTouchActive(true);
+                  setGetInTouchTab('inquiry');
+                  setSelectedBlogPost(null);
+                  window.scrollTo({ top: 0, behavior: 'smooth' });
+                }}
+                className="px-4 py-2.5 rounded-xl text-xs font-bold text-left text-emerald-950 hover:bg-emerald-50 hover:text-emerald-700 transition cursor-pointer"
+              >
+                Get In Touch
+              </button>
               <div className="pt-2 border-t border-emerald-900/5">
                 <button
                   id="mobile-menu-booking-btn"
                   onClick={() => {
                     setIsMobileMenuOpen(false);
-                    handleOpenBooking('vet');
+                    setIsGetInTouchActive(true);
+                    setGetInTouchTab('support');
+                    setSelectedBlogPost(null);
+                    window.scrollTo({ top: 0, behavior: 'smooth' });
                   }}
-                  className="w-full text-center px-4 py-3 rounded-xl text-xs font-bold border border-emerald-900/15 bg-emerald-50 hover:bg-emerald-100 text-emerald-950 transition"
+                  className="w-full text-center px-4 py-3 rounded-xl text-xs font-bold border border-emerald-900/15 bg-emerald-50 hover:bg-emerald-100 text-emerald-950 transition cursor-pointer"
                 >
-                  Consultation Desk
+                  Support Desk
                 </button>
               </div>
             </nav>
@@ -286,8 +323,31 @@ export default function App() {
         )}
       </header>
 
-      {/* 3. HERO SLIDESHOW COMPONENT */}
-      <HeroSlider 
+      {selectedBlogPost ? (
+        <BlogDetail 
+          post={selectedBlogPost} 
+          onBack={() => {
+            setSelectedBlogPost(null);
+            setTimeout(() => {
+              const el = document.getElementById('blog-section-wrapper');
+              if (el) el.scrollIntoView({ behavior: 'smooth' });
+            }, 100);
+          }} 
+          onSelectPost={(post) => setSelectedBlogPost(post)}
+        />
+      ) : isGetInTouchActive ? (
+        <GetInTouchPage 
+          initialTab={getInTouchTab}
+          initialService={getInTouchService}
+          onBack={() => {
+            setIsGetInTouchActive(false);
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+          }}
+        />
+      ) : (
+        <>
+          {/* 3. HERO SLIDESHOW COMPONENT */}
+          <HeroSlider 
         onShopClick={() => {
           const el = document.getElementById('products-catalog-section');
           el?.scrollIntoView({ behavior: 'smooth' });
@@ -433,55 +493,53 @@ export default function App() {
       </section>
 
       {/* 6. SEASONAL CAMPAIGN/PROMO BLOCK */}
-      <section id="promo-banner-blocks" className="py-12 bg-white">
-        <div className="container mx-auto px-6">
-          <div className="bg-emerald-950 rounded-[40px] p-8 md:p-16 relative overflow-hidden text-white flex flex-col md:flex-row items-center justify-between gap-12 border border-emerald-500/10">
-            <div className="absolute top-0 right-0 w-80 h-80 bg-gradient-to-bl from-emerald-600/30 to-transparent pointer-events-none rounded-full" />
-            <div className="absolute -bottom-20 -left-20 w-80 h-80 bg-gradient-to-tr from-yellow-500/10 to-transparent pointer-events-none rounded-full" />
+      <section id="promo-banner-blocks" className="py-20 md:py-28 bg-emerald-950 text-white relative overflow-hidden border-y border-emerald-500/10">
+        <div className="absolute top-0 right-0 w-80 h-80 bg-gradient-to-bl from-emerald-600/25 to-transparent pointer-events-none rounded-full" />
+        <div className="absolute -bottom-20 -left-20 w-80 h-80 bg-gradient-to-tr from-yellow-500/10 to-transparent pointer-events-none rounded-full" />
 
-            <div className="space-y-6 max-w-xl text-left relative z-10">
-              <span className="text-[10px] font-bold uppercase tracking-wider bg-emerald-700 text-emerald-300 px-3 py-1.5 rounded-full inline-block">
-                Seasonal Planting Offer
-              </span>
-              <h3 className="font-serif text-3xl md:text-5xl font-medium leading-tight">
-                Get up to 20% Off on Selective Planting Fertilizers
-              </h3>
-              <p className="text-emerald-100/85 text-xs md:text-sm leading-relaxed">
-                Ensure a heavy harvest this seasonal cycle. We offer price cuts on genuine NPK, DAP, and certified biological soil fungicides with free delivery on bulk orders of more than 15 bags.
-              </p>
-              <div className="flex flex-wrap gap-4 pt-2">
-                <a
-                  href="#products-catalog-section"
-                  className="px-6 py-3.5 bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs rounded-full shadow-md transition transform hover:-translate-y-0.5"
-                >
-                  Shop Seasonal Fertilizer
-                </a>
-                <button
-                  id="promo-speak-btn"
-                  onClick={() => handleOpenBooking('agronomy')}
-                  className="px-6 py-3.5 border border-white/20 hover:border-white/45 bg-white/10 hover:bg-white/15 text-white font-bold text-xs rounded-full transition"
-                >
-                  Consult Agronomist
-                </button>
-              </div>
+        <div className="container mx-auto px-6 flex flex-col md:flex-row items-center justify-between gap-12 relative z-10">
+          <div className="space-y-6 max-w-xl text-left">
+            <span className="text-[10px] font-bold uppercase tracking-wider bg-emerald-700 text-emerald-300 px-3 py-1.5 rounded-full inline-block">
+              Seasonal Planting Offer
+            </span>
+            <h3 className="font-serif text-3xl md:text-5xl font-medium leading-tight">
+              Get up to 20% Off on Selective Planting Fertilizers
+            </h3>
+            <p className="text-emerald-100/85 text-xs md:text-sm leading-relaxed">
+              Ensure a heavy harvest this seasonal cycle. We offer price cuts on genuine NPK, DAP, and certified biological soil fungicides with free delivery on bulk orders of more than 15 bags.
+            </p>
+            <div className="flex flex-wrap gap-4 pt-2">
+              <a
+                href="#products-catalog-section"
+                className="px-6 py-3.5 bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs rounded-full shadow-md transition transform hover:-translate-y-0.5"
+              >
+                Shop Seasonal Fertilizer
+              </a>
+              <button
+                id="promo-speak-btn"
+                onClick={() => handleOpenBooking('agronomy')}
+                className="px-6 py-3.5 border border-white/20 hover:border-white/45 bg-white/10 hover:bg-white/15 text-white font-bold text-xs rounded-full transition"
+              >
+                Consult Agronomist
+              </button>
             </div>
+          </div>
 
-            <div className="relative shrink-0 w-full md:w-80 h-64 bg-emerald-900/60 border border-emerald-500/20 rounded-3xl overflow-hidden shadow-2xl flex flex-col justify-between p-8">
-              <div className="flex justify-between items-start">
-                <span className="text-[11px] font-bold uppercase tracking-widest text-emerald-400">Limited Deal</span>
-                <span className="bg-yellow-400 text-slate-950 font-black text-[10px] px-2.5 py-1 rounded-full shadow-sm">
-                  KSh 350 Flat Delivery
-                </span>
-              </div>
-              <div className="space-y-2">
-                <p className="font-serif text-2xl font-semibold leading-tight text-white">Maize &amp; Poultry Packs</p>
-                <p className="text-[11px] text-emerald-200/95 leading-relaxed">
-                  Carefully compiled packs containing high-altitude hybrid seeds paired with crop-specific fungicides.
-                </p>
-              </div>
-              <div className="text-xs text-yellow-400 font-bold">
-                ★ 4.9 Rating from 450+ Cooperatives
-              </div>
+          <div className="relative shrink-0 w-full md:w-80 h-64 bg-emerald-900/60 border border-emerald-500/20 rounded-3xl overflow-hidden shadow-2xl flex flex-col justify-between p-8">
+            <div className="flex justify-between items-start">
+              <span className="text-[11px] font-bold uppercase tracking-widest text-emerald-400">Limited Deal</span>
+              <span className="bg-yellow-400 text-slate-950 font-black text-[10px] px-2.5 py-1 rounded-full shadow-sm">
+                KSh 350 Flat Delivery
+              </span>
+            </div>
+            <div className="space-y-2">
+              <p className="font-serif text-2xl font-semibold leading-tight text-white">Maize &amp; Poultry Packs</p>
+              <p className="text-[11px] text-emerald-200/95 leading-relaxed">
+                Carefully compiled packs containing high-altitude hybrid seeds paired with crop-specific fungicides.
+              </p>
+            </div>
+            <div className="text-xs text-yellow-400 font-bold">
+              ★ 4.9 Rating from 450+ Cooperatives
             </div>
           </div>
         </div>
@@ -561,12 +619,17 @@ export default function App() {
               </div>
 
               <div className="pt-2">
-                <a
-                  href="#contact-form-section"
-                  className="btn bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs px-8 py-3.5 rounded-full shadow-md transition transform hover:-translate-y-0.5"
+                <button
+                  onClick={() => {
+                    setIsGetInTouchActive(true);
+                    setGetInTouchTab('inquiry');
+                    setSelectedBlogPost(null);
+                    window.scrollTo({ top: 0, behavior: 'smooth' });
+                  }}
+                  className="btn bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs px-8 py-3.5 rounded-full shadow-md transition transform hover:-translate-y-0.5 cursor-pointer"
                 >
                   Write to Company Directors
-                </a>
+                </button>
               </div>
             </div>
 
@@ -674,10 +737,15 @@ export default function App() {
       </section>
 
       {/* 10. FAQS EXPANDABLE ACCORDIONS */}
-      <FAQSection />
+      <FAQSection onWriteToExpert={() => {
+        setIsGetInTouchActive(true);
+        setGetInTouchTab('inquiry');
+        setSelectedBlogPost(null);
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      }} />
 
       {/* 11. BLOG COMPONENT */}
-      <BlogSection />
+      <BlogSection onSelectArticle={(blog) => { setSelectedBlogPost(blog); window.scrollTo({ top: 0, behavior: 'smooth' }); }} />
 
       {/* 12. BRANDS & PARTNERS MARQUEE */}
       <section id="partners-marquee-section" className="py-16 bg-white overflow-hidden">
@@ -768,221 +836,87 @@ export default function App() {
         </div>
       </section>
 
-      {/* 14. GET IN TOUCH CONTACT FORM SECTION */}
-      <section id="contact-form-section" className="py-20 bg-white">
-        <div className="container mx-auto px-6">
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-16 items-start">
-            
-            {/* Information Column */}
-            <div className="lg:col-span-5 space-y-8 text-left">
-              <div className="space-y-4">
-                <span className="text-xs md:text-sm font-bold tracking-widest text-emerald-600 uppercase">Contact Us</span>
-                <h2 className="font-serif text-3xl md:text-5xl font-medium tracking-tight text-emerald-950 leading-tight">
-                  Get in Touch with our Agronomy Desk
-                </h2>
-                <p className="text-emerald-800 text-xs md:text-sm">
-                  Whether you are ordering fertilizer containers for a cooperative society, or simply checking delivery options for a remote farm, we are ready to assist.
-                </p>
-              </div>
 
-              {/* Direct Info cards */}
-              <div className="space-y-4">
-                
-                <div className="p-5 rounded-2xl bg-emerald-50 border border-emerald-900/5 flex items-start space-x-4">
-                  <div className="w-10 h-10 rounded-xl bg-white text-emerald-600 flex items-center justify-center shrink-0 shadow-sm">
-                    <MapPin className="w-5 h-5" />
-                  </div>
-                  <div className="text-xs">
-                    <p className="font-bold text-emerald-950 text-sm">Industrial Area Main Branch</p>
-                    <p className="text-emerald-800 mt-1 leading-relaxed">Commercial Street, block 45, Industrial Area, Nairobi, Kenya.</p>
-                  </div>
-                </div>
-
-                <div className="p-5 rounded-2xl bg-emerald-50 border border-emerald-900/5 flex items-start space-x-4">
-                  <div className="w-10 h-10 rounded-xl bg-white text-emerald-600 flex items-center justify-center shrink-0 shadow-sm">
-                    <Phone className="w-5 h-5" />
-                  </div>
-                  <div className="text-xs">
-                    <p className="font-bold text-emerald-950 text-sm">Call Center Help Desk</p>
-                    <p className="text-emerald-800 mt-1 leading-relaxed">+254 7XX XXX XXX / +254 20 XXX XXXX</p>
-                  </div>
-                </div>
-
-                <div className="p-5 rounded-2xl bg-emerald-50 border border-emerald-900/5 flex items-start space-x-4">
-                  <div className="w-10 h-10 rounded-xl bg-white text-emerald-600 flex items-center justify-center shrink-0 shadow-sm">
-                    <Mail className="w-5 h-5" />
-                  </div>
-                  <div className="text-xs">
-                    <p className="font-bold text-emerald-950 text-sm">Email Inquiries</p>
-                    <p className="text-emerald-800 mt-1 leading-relaxed">info@maximvet.co.ke / orders@maximvet.co.ke</p>
-                  </div>
-                </div>
-
-              </div>
-            </div>
-
-            {/* Form Column */}
-            <div className="lg:col-span-7 bg-emerald-50/50 p-8 md:p-12 rounded-[40px] border border-emerald-900/10 shadow-sm relative">
-              <form onSubmit={handleContactSubmit} className="space-y-6">
-                <h4 className="font-serif text-2xl font-semibold text-emerald-950">Send an Online Message</h4>
-                <p className="text-emerald-800 text-xs">Fill out your inquiry details, and an agronomist clerk will respond shortly.</p>
-
-                {contactSuccess && (
-                  <div className="p-4 bg-emerald-100 border border-emerald-300 text-emerald-900 text-xs rounded-xl font-semibold flex items-center space-x-2">
-                    <CheckCircle className="w-4 h-4 text-emerald-600 shrink-0" />
-                    <span>Success! Message delivered. Our expert will contact you shortly.</span>
-                  </div>
-                )}
-
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <div className="space-y-1">
-                    <label className="block text-xs font-bold text-emerald-950">Your Name *</label>
-                    <input
-                      id="contact-name"
-                      type="text"
-                      required
-                      placeholder="e.g. Tina Maina"
-                      value={contactName}
-                      onChange={(e) => setContactName(e.target.value)}
-                      className="w-full px-4 py-3 rounded-xl border border-emerald-900/15 text-xs bg-white focus:border-emerald-600 outline-none"
-                    />
-                  </div>
-
-                  <div className="space-y-1">
-                    <label className="block text-xs font-bold text-emerald-950">Phone Number *</label>
-                    <input
-                      id="contact-phone"
-                      type="tel"
-                      required
-                      placeholder="e.g., 0712345678"
-                      value={contactPhone}
-                      onChange={(e) => setContactPhone(e.target.value)}
-                      className="w-full px-4 py-3 rounded-xl border border-emerald-900/15 text-xs bg-white focus:border-emerald-600 outline-none"
-                    />
-                  </div>
-                </div>
-
-                <div className="space-y-1">
-                  <label className="block text-xs font-bold text-emerald-950">Email Address</label>
-                  <input
-                    id="contact-email"
-                    type="email"
-                    placeholder="e.g. tina@yourfarm.com"
-                    value={contactEmail}
-                    onChange={(e) => setContactEmail(e.target.value)}
-                    className="w-full px-4 py-3 rounded-xl border border-emerald-900/15 text-xs bg-white focus:border-emerald-600 outline-none"
-                  />
-                </div>
-
-                <div className="space-y-1">
-                  <label className="block text-xs font-bold text-emerald-950">Inquiry Message *</label>
-                  <textarea
-                    id="contact-msg"
-                    required
-                    rows={4}
-                    placeholder="Type in detail which chemicals or vet support you are asking for..."
-                    value={contactMsg}
-                    onChange={(e) => setContactMsg(e.target.value)}
-                    className="w-full px-4 py-3 rounded-xl border border-emerald-900/15 text-xs bg-white focus:border-emerald-600 outline-none resize-none"
-                  />
-                </div>
-
-                <button
-                  id="contact-submit-btn"
-                  type="submit"
-                  disabled={contactLoading}
-                  className="w-full btn bg-emerald-600 hover:bg-emerald-500 text-white font-semibold py-3.5 rounded-xl shadow-md transition flex items-center justify-center space-x-2 disabled:opacity-50"
-                >
-                  {contactLoading ? (
-                    <>
-                      <div className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                      <span>Sending inquiry...</span>
-                    </>
-                  ) : (
-                    <>
-                      <span>Send Direct Message</span>
-                      <Send className="w-3.5 h-3.5" />
-                    </>
-                  )}
-                </button>
-              </form>
-            </div>
-
-          </div>
-        </div>
-      </section>
+        </>
+      )}
 
       {/* 15. BRANDED FOOTER */}
-      <footer id="main-site-footer" className="mt-auto bg-emerald-950 text-emerald-100/80 pt-16 border-t border-emerald-900 relative overflow-hidden">
-        <div className="absolute bottom-0 left-0 right-0 h-40 bg-gradient-to-t from-emerald-900/40 to-transparent pointer-events-none" />
+      <footer id="main-site-footer" className="mt-auto bg-emerald-950 text-emerald-100/80 pt-16 pb-8 border-t border-emerald-900 relative overflow-hidden">
+        <div className="absolute bottom-0 left-0 right-0 h-40 bg-gradient-to-t from-emerald-900/30 to-transparent pointer-events-none" />
         
-        <div className="container mx-auto px-6 pb-12">
-          <div className="grid grid-cols-1 md:grid-cols-12 gap-12">
+        <div className="container mx-auto px-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-12 gap-10 md:gap-12">
             
             {/* Branding Column */}
-            <div className="md:col-span-4 space-y-6">
+            <div className="sm:col-span-2 md:col-span-4 space-y-6">
               <a href="#" className="flex items-center space-x-3 group">
-                <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-emerald-500 to-emerald-700 flex items-center justify-center text-white font-black font-serif text-lg">
+                <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-emerald-500 to-emerald-700 flex items-center justify-center text-white font-black font-serif text-lg shadow-md">
                   M
                 </div>
-                <span className="font-serif text-lg font-bold text-white tracking-tight leading-none">Maxim Vet</span>
+                <span className="font-serif text-xl font-bold text-white tracking-tight leading-none">Maxim Vet</span>
               </a>
               <p className="text-xs md:text-sm leading-relaxed text-emerald-100/70 max-w-sm">
                 Kenya’s highly trusted supplier of KEBS and PCPB certified agricultural inputs, veterinary medications, biological crop boosters, and farm knapsacks. Empowering smallholders since 1996.
               </p>
               <div className="flex space-x-3 pt-2">
-                <a href="#" className="w-8 h-8 rounded-full bg-white/5 hover:bg-white/10 flex items-center justify-center transition" aria-label="Facebook">
+                <a href="#" className="w-9 h-9 rounded-full bg-white/5 hover:bg-white/10 flex items-center justify-center transition border border-white/5" aria-label="Facebook">
                   <Facebook className="w-4 h-4 text-emerald-300" />
                 </a>
-                <a href="#" className="w-8 h-8 rounded-full bg-white/5 hover:bg-white/10 flex items-center justify-center transition" aria-label="Instagram">
+                <a href="#" className="w-9 h-9 rounded-full bg-white/5 hover:bg-white/10 flex items-center justify-center transition border border-white/5" aria-label="Instagram">
                   <Instagram className="w-4 h-4 text-emerald-300" />
                 </a>
-                <a href="#" className="w-8 h-8 rounded-full bg-white/5 hover:bg-white/10 flex items-center justify-center transition" aria-label="LinkedIn">
+                <a href="#" className="w-9 h-9 rounded-full bg-white/5 hover:bg-white/10 flex items-center justify-center transition border border-white/5" aria-label="LinkedIn">
                   <Linkedin className="w-4 h-4 text-emerald-300" />
                 </a>
               </div>
             </div>
 
             {/* Links Column 1 */}
-            <div className="md:col-span-3 space-y-4 text-left">
-              <h5 className="text-xs font-bold uppercase tracking-wider text-emerald-300">Catalog Ranges</h5>
-              <ul className="space-y-2 text-xs">
-                <li><a href="#products-catalog-section" className="hover:text-white transition">Crop Protection</a></li>
-                <li><a href="#products-catalog-section" className="hover:text-white transition">Biological Fungicides</a></li>
-                <li><a href="#products-catalog-section" className="hover:text-white transition">Dairy Cow Boosters</a></li>
-                <li><a href="#products-catalog-section" className="hover:text-white transition">Field Spray Pumps</a></li>
-                <li><a href="#products-catalog-section" className="hover:text-white transition">High-Yield Seeds</a></li>
+            <div className="sm:col-span-1 md:col-span-3 space-y-4 text-left">
+              <h5 className="text-xs font-bold uppercase tracking-wider text-emerald-300 border-b border-emerald-900 pb-2 sm:border-0 sm:pb-0">Catalog Ranges</h5>
+              <ul className="space-y-2.5 text-xs text-emerald-200/80">
+                <li><a href="#products-catalog-section" className="hover:text-white hover:underline decoration-emerald-500 underline-offset-4 transition">Crop Protection</a></li>
+                <li><a href="#products-catalog-section" className="hover:text-white hover:underline decoration-emerald-500 underline-offset-4 transition">Biological Fungicides</a></li>
+                <li><a href="#products-catalog-section" className="hover:text-white hover:underline decoration-emerald-500 underline-offset-4 transition">Dairy Cow Boosters</a></li>
+                <li><a href="#products-catalog-section" className="hover:text-white hover:underline decoration-emerald-500 underline-offset-4 transition">Field Spray Pumps</a></li>
+                <li><a href="#products-catalog-section" className="hover:text-white hover:underline decoration-emerald-500 underline-offset-4 transition">High-Yield Seeds</a></li>
               </ul>
             </div>
 
             {/* Links Column 2 */}
-            <div className="md:col-span-3 space-y-4 text-left">
-              <h5 className="text-xs font-bold uppercase tracking-wider text-emerald-300">Farming Services</h5>
-              <ul className="space-y-2 text-xs">
-                <li><button id="f-link-vet" onClick={() => handleOpenBooking('vet')} className="hover:text-white transition text-left">Veterinary Booking</button></li>
-                <li><button id="f-link-soil" onClick={() => handleOpenBooking('soil')} className="hover:text-white transition text-left">Soil Lab Sampling</button></li>
-                <li><button id="f-link-agronomy" onClick={() => handleOpenBooking('agronomy')} className="hover:text-white transition text-left">Agronomy Guidance</button></li>
-                <li><button id="f-link-delivery" onClick={() => handleOpenBooking('delivery')} className="hover:text-white transition text-left">Cooperative Dispatch</button></li>
+            <div className="sm:col-span-1 md:col-span-3 space-y-4 text-left">
+              <h5 className="text-xs font-bold uppercase tracking-wider text-emerald-300 border-b border-emerald-900 pb-2 sm:border-0 sm:pb-0">Farming Services</h5>
+              <ul className="space-y-2.5 text-xs text-emerald-200/80">
+                <li><button id="f-link-vet" onClick={() => handleOpenBooking('vet')} className="hover:text-white hover:underline decoration-emerald-500 underline-offset-4 transition text-left cursor-pointer">Veterinary Booking</button></li>
+                <li><button id="f-link-soil" onClick={() => handleOpenBooking('soil')} className="hover:text-white hover:underline decoration-emerald-500 underline-offset-4 transition text-left cursor-pointer">Soil Lab Sampling</button></li>
+                <li><button id="f-link-agronomy" onClick={() => handleOpenBooking('agronomy')} className="hover:text-white hover:underline decoration-emerald-500 underline-offset-4 transition text-left cursor-pointer">Agronomy Guidance</button></li>
+                <li><button id="f-link-delivery" onClick={() => handleOpenBooking('delivery')} className="hover:text-white hover:underline decoration-emerald-500 underline-offset-4 transition text-left cursor-pointer">Cooperative Dispatch</button></li>
               </ul>
             </div>
 
             {/* Contact details */}
-            <div className="md:col-span-2 space-y-4 text-left text-xs">
-              <h5 className="text-xs font-bold uppercase tracking-wider text-emerald-300">Nairobi Headquarters</h5>
-              <p className="text-emerald-100/70 leading-relaxed">
-                Industrial Area Main Block, Commercial Street, Nairobi, Kenya.
-              </p>
-              <p className="text-emerald-100/70 font-semibold">
-                Phone: +254 7XX XXX XXX<br />
-                Office: info@maximvet.co.ke
-              </p>
+            <div className="sm:col-span-2 md:col-span-2 space-y-4 text-left text-xs">
+              <h5 className="text-xs font-bold uppercase tracking-wider text-emerald-300 border-b border-emerald-900 pb-2 sm:border-0 sm:pb-0">Nairobi Headquarters</h5>
+              <div className="space-y-3 text-emerald-200/80">
+                <p className="leading-relaxed">
+                  Industrial Area Main Block, Commercial Street, Nairobi, Kenya.
+                </p>
+                <p className="leading-relaxed">
+                  <span className="block font-medium text-emerald-300">Phone:</span>
+                  +254 712 345 678
+                </p>
+                <p className="leading-relaxed">
+                  <span className="block font-medium text-emerald-300">Office:</span>
+                  info@maximvet.co.ke
+                </p>
+              </div>
             </div>
 
           </div>
 
-          <div className="border-t border-emerald-900 mt-12 pt-8 flex flex-col md:flex-row justify-between items-center gap-4 text-xs">
+          <div className="border-t border-emerald-900/60 mt-12 pt-8 flex flex-col sm:flex-row justify-between items-center gap-4 text-[11px] text-emerald-300/60 text-center sm:text-left">
             <span>© 2026 Maxim Vet Ltd. All rights reserved. Registered Agribusiness Kenya.</span>
-            <div className="flex space-x-6 text-emerald-100/50">
+            <div className="flex flex-wrap justify-center gap-x-6 gap-y-2 text-emerald-200/40">
               <a href="#" className="hover:text-white transition">Privacy Policy</a>
               <a href="#" className="hover:text-white transition">Terms of Service</a>
               <a href="#" className="hover:text-white transition">PCPB Licenses</a>
@@ -1001,11 +935,7 @@ export default function App() {
         onClearCart={handleClearCart}
       />
 
-      <BookingModal
-        isOpen={isBookingOpen}
-        onClose={() => setIsBookingOpen(false)}
-        initialService={bookingInitialService}
-      />
+
 
       {/* 17. FLOATING QUICK CHAT WHATSAPP BUTTON */}
       <a

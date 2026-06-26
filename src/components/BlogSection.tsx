@@ -3,7 +3,11 @@ import { BLOGS } from '../data';
 import { BlogPost } from '../types';
 import { BookOpen, Calendar, Clock, X, Heart, MessageSquare } from 'lucide-react';
 
-export default function BlogSection() {
+interface BlogSectionProps {
+  onSelectArticle?: (blog: BlogPost) => void;
+}
+
+export default function BlogSection({ onSelectArticle }: BlogSectionProps) {
   const [selectedArticle, setSelectedArticle] = useState<BlogPost | null>(null);
   const [likes, setLikes] = useState<Record<string, number>>({});
   const [likedList, setLikedList] = useState<Record<string, boolean>>({});
@@ -46,7 +50,13 @@ export default function BlogSection() {
               <article
                 id={`blog-card-${blog.id}`}
                 key={blog.id}
-                onClick={() => setSelectedArticle(blog)}
+                onClick={() => {
+                  if (onSelectArticle) {
+                    onSelectArticle(blog);
+                  } else {
+                    setSelectedArticle(blog);
+                  }
+                }}
                 className="group bg-white rounded-3xl overflow-hidden border border-emerald-900/10 shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300 flex flex-col h-full cursor-pointer"
               >
                 {/* Blog Image */}
