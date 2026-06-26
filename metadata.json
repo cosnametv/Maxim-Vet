@@ -1,0 +1,6 @@
+{
+  "name": "Maxim Vet",
+  "description": "Premium Agrochemicals & Animal Health Suppliers in Kenya. Shop certified crop protection, fertilizers, vet medicines, and request expert consultations.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
