@@ -81,13 +81,17 @@ export default function App() {
     return () => clearInterval(timer);
   }, []);
 
-  // Back to top behavior
+  // Back to top + sticky glass header behavior
   const [showBackToTop, setShowBackToTop] = useState(false);
+  const [isScrolled, setIsScrolled] = useState(false);
   useEffect(() => {
     const handleScroll = () => {
-      setShowBackToTop(window.scrollY > 400);
+      const y = window.scrollY;
+      setShowBackToTop(y > 400);
+      setIsScrolled(y > 10);
     };
-    window.addEventListener('scroll', handleScroll);
+    handleScroll();
+    window.addEventListener('scroll', handleScroll, { passive: true });
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
@@ -166,7 +170,7 @@ export default function App() {
   const cartTotalQty = cartItems.reduce((acc, item) => acc + item.quantity, 0);
 
   return (
-    <div className="min-h-screen bg-emerald-50 text-slate-800 flex flex-col font-sans selection:bg-emerald-600 selection:text-white overflow-x-hidden">
+    <div className="min-h-screen bg-emerald-50 text-slate-800 flex flex-col font-sans selection:bg-emerald-600 selection:text-white overflow-x-clip">
       
       {!isAcademyRoute && (
         <>
@@ -202,8 +206,15 @@ export default function App() {
       </div>
 
       {/* 2. STICKY BRAND NAVIGATION HEADER */}
-      <header id="site-sticky-header" className="sticky top-0 z-40 bg-white border-b border-emerald-900/10 shadow-sm">
-        <div className="container mx-auto px-6 py-4 flex items-center justify-between">
+      <header
+        id="site-sticky-header"
+        className={`sticky top-0 z-40 transition-all duration-300 ${
+          isScrolled
+            ? 'bg-white/70 backdrop-blur-xl border-b border-emerald-900/10 shadow-lg shadow-emerald-950/5'
+            : 'bg-white border-b border-emerald-900/10 shadow-sm'
+        }`}
+      >
+        <div className={`container mx-auto px-6 flex items-center justify-between transition-all duration-300 ${isScrolled ? 'py-2.5' : 'py-4'}`}>
           
           {/* Logo Brand */}
           <a href="#" onClick={handleLogoClick} className="flex items-center space-x-3 shrink-0 group">
@@ -218,14 +229,14 @@ export default function App() {
 
           {/* Core Scroll Links */}
           <nav className="hidden lg:flex items-center space-x-1">
+            <a href="#hero-slider-container" onClick={(e) => handleNavLinkClick(e, 'hero-slider-container')} className="px-4 py-2 rounded-full text-xs font-bold text-emerald-950 hover:bg-emerald-50 hover:text-emerald-700 transition">
+              Home
+            </a>
             <a href="#about-us-section" onClick={(e) => handleNavLinkClick(e, 'about-us-section')} className="px-4 py-2 rounded-full text-xs font-bold text-emerald-950 hover:bg-emerald-50 hover:text-emerald-700 transition">
               About Us
             </a>
             <a href="#products-catalog-section" onClick={(e) => handleNavLinkClick(e, 'products-catalog-section')} className="px-4 py-2 rounded-full text-xs font-bold text-emerald-950 hover:bg-emerald-50 hover:text-emerald-700 transition">
               Certified Catalog
-            </a>
-            <a href="#hero-slider-container" onClick={(e) => handleNavLinkClick(e, 'hero-slider-container')} className="px-4 py-2 rounded-full text-xs font-bold text-emerald-950 hover:bg-emerald-50 hover:text-emerald-700 transition">
-              Home
             </a>
             <a href="#services-highlights-section" onClick={(e) => handleNavLinkClick(e, 'services-highlights-section')} className="px-4 py-2 rounded-full text-xs font-bold text-emerald-950 hover:bg-emerald-50 hover:text-emerald-700 transition">
               Farming Services
@@ -272,19 +283,29 @@ export default function App() {
                 >
                   Farmers Academy
                 </a>
+                <div className="my-1.5 border-t border-emerald-900/10" />
+                <a
+                  id="nav-academy-blog-link"
+                  href="#blog-section-wrapper"
+                  onClick={(e) => {
+                    setIsAcademyDropdownOpen(false);
+                    handleNavLinkClick(e, 'blog-section-wrapper');
+                  }}
+                  className="block px-4 py-2.5 text-xs font-bold text-emerald-950 hover:bg-emerald-50 hover:text-emerald-700 transition"
+                >
+                  Academy Blog
+                </a>
               </div>
             </div>
-            <a href="#blog-section-wrapper" onClick={(e) => handleNavLinkClick(e, 'blog-section-wrapper')} className="px-4 py-2 rounded-full text-xs font-bold text-emerald-950 hover:bg-emerald-50 hover:text-emerald-700 transition">
-              Academy Blog
-            </a>
             <button 
+              id="nav-get-in-touch-btn"
               onClick={() => {
                 setIsGetInTouchActive(true);
                 setGetInTouchTab('inquiry');
                 setSelectedBlogPost(null);
                 window.scrollTo({ top: 0, behavior: 'smooth' });
               }} 
-              className="px-4 py-2 rounded-full text-xs font-bold text-emerald-950 hover:bg-emerald-50 hover:text-emerald-700 transition cursor-pointer"
+              className="ml-2 inline-flex items-center px-5 py-2.5 rounded-full text-xs font-bold text-white bg-gradient-to-r from-emerald-600 to-emerald-500 hover:from-emerald-500 hover:to-emerald-400 shadow-md shadow-emerald-600/25 transition transform hover:-translate-y-0.5 cursor-pointer"
             >
               Get In Touch
             </button>
@@ -292,19 +313,6 @@ export default function App() {
 
           {/* Action Trigger Buttons */}
           <div className="flex items-center space-x-2 sm:space-x-3">
-            <button
-              id="header-booking-btn"
-              onClick={() => {
-                setIsGetInTouchActive(true);
-                setGetInTouchTab('support');
-                setSelectedBlogPost(null);
-                window.scrollTo({ top: 0, behavior: 'smooth' });
-              }}
-              className="hidden sm:inline-flex px-4 py-2 rounded-full text-xs font-bold border border-emerald-900/15 bg-emerald-50 hover:bg-emerald-100 text-emerald-950 transition cursor-pointer"
-            >
-              Support Desk
-            </button>
-            
             <button
               id="header-cart-trigger"
               onClick={() => setIsCartOpen(true)}
@@ -337,11 +345,10 @@ export default function App() {
           <div className="lg:hidden border-t border-emerald-900/5 bg-white shadow-inner transition-all duration-300">
             <nav className="container mx-auto px-6 py-4 flex flex-col space-y-2">
               {[
+                { label: 'Home', href: '#hero-slider-container' },
                 { label: 'About Us', href: '#about-us-section' },
                 { label: 'Certified Catalog', href: '#products-catalog-section' },
-                { label: 'Home', href: '#hero-slider-container' },
                 { label: 'Farming Services', href: '#services-highlights-section' },
-                { label: 'Academy Blog', href: '#blog-section-wrapper' },
               ].map((link) => (
                 <a
                   key={link.label}
@@ -385,32 +392,30 @@ export default function App() {
                   <span>Farmers Academy</span>
                   <ChevronRight className="w-3.5 h-3.5 text-emerald-600" />
                 </a>
+                <a
+                  href="#blog-section-wrapper"
+                  onClick={(e) => {
+                    setIsMobileMenuOpen(false);
+                    handleNavLinkClick(e, 'blog-section-wrapper');
+                  }}
+                  className="flex items-center justify-between px-4 py-2.5 rounded-xl text-xs font-bold text-emerald-950 hover:bg-emerald-50 hover:text-emerald-700 transition"
+                >
+                  <span>Academy Blog</span>
+                  <ChevronRight className="w-3.5 h-3.5 text-emerald-600" />
+                </a>
               </div>
-              <button
-                onClick={() => {
-                  setIsMobileMenuOpen(false);
-                  setIsGetInTouchActive(true);
-                  setGetInTouchTab('inquiry');
-                  setSelectedBlogPost(null);
-                  window.scrollTo({ top: 0, behavior: 'smooth' });
-                }}
-                className="px-4 py-2.5 rounded-xl text-xs font-bold text-left text-emerald-950 hover:bg-emerald-50 hover:text-emerald-700 transition cursor-pointer"
-              >
-                Get In Touch
-              </button>
               <div className="pt-2 border-t border-emerald-900/5">
                 <button
-                  id="mobile-menu-booking-btn"
                   onClick={() => {
                     setIsMobileMenuOpen(false);
                     setIsGetInTouchActive(true);
-                    setGetInTouchTab('support');
+                    setGetInTouchTab('inquiry');
                     setSelectedBlogPost(null);
                     window.scrollTo({ top: 0, behavior: 'smooth' });
                   }}
-                  className="w-full text-center px-4 py-3 rounded-xl text-xs font-bold border border-emerald-900/15 bg-emerald-50 hover:bg-emerald-100 text-emerald-950 transition cursor-pointer"
+                  className="w-full text-center px-4 py-3 rounded-xl text-xs font-bold text-white bg-gradient-to-r from-emerald-600 to-emerald-500 hover:from-emerald-500 hover:to-emerald-400 shadow-md shadow-emerald-600/25 transition cursor-pointer"
                 >
-                  Support Desk
+                  Get In Touch
                 </button>
               </div>
             </nav>
