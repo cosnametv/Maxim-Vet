@@ -7,11 +7,13 @@ import FAQSection from './components/FAQSection';
 import BlogSection from './components/BlogSection';
 import BlogDetail from './components/BlogDetail';
 import GetInTouchPage from './components/GetInTouchPage';
+import VetAcademyPortal from './components/VetAcademyPortal';
+import FarmersAcademyPortal from './components/FarmersAcademyPortal';
 import { 
   Phone, MapPin, Mail, Clock, Facebook, Instagram, Linkedin, 
   ChevronRight, ArrowUp, Send, CheckCircle, Award, Users, 
   HelpCircle, MessageCircle, Heart, Star, Truck, HeartHandshake, Leaf, ShieldAlert,
-  ShoppingCart, Stethoscope, FlaskConical, Menu, X
+  ShoppingCart, Stethoscope, FlaskConical, Menu, X, ChevronDown
 } from 'lucide-react';
 
 export default function App() {
@@ -22,6 +24,26 @@ export default function App() {
   const [isGetInTouchActive, setIsGetInTouchActive] = useState(false);
   const [getInTouchTab, setGetInTouchTab] = useState<'inquiry' | 'support'>('inquiry');
   const [getInTouchService, setGetInTouchService] = useState<'vet' | 'soil' | 'agronomy' | 'delivery'>('vet');
+  
+  // Path Router State
+  const [currentPath, setCurrentPath] = useState(window.location.pathname);
+  const [isAcademyDropdownOpen, setIsAcademyDropdownOpen] = useState(false);
+  const isAcademyRoute = currentPath === '/vets' || currentPath === '/farmers';
+
+  // Sync with browser history popstate
+  useEffect(() => {
+    const handlePopState = () => {
+      setCurrentPath(window.location.pathname);
+    };
+    window.addEventListener('popstate', handlePopState);
+    return () => window.removeEventListener('popstate', handlePopState);
+  }, []);
+
+  const navigate = (path: string) => {
+    window.history.pushState(null, '', path);
+    setCurrentPath(path);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
   
   // Newsletter state
   const [newsletterEmail, setNewsletterEmail] = useState('');
@@ -146,8 +168,10 @@ export default function App() {
   return (
     <div className="min-h-screen bg-emerald-50 text-slate-800 flex flex-col font-sans selection:bg-emerald-600 selection:text-white overflow-x-hidden">
       
-      {/* 1. TOP ANNOUNCEMENT BAR */}
-      <div id="top-announcement-bar" className="bg-emerald-950 text-emerald-100 py-2.5 px-6 text-xs font-semibold border-b border-emerald-900">
+      {!isAcademyRoute && (
+        <>
+          {/* 1. TOP ANNOUNCEMENT BAR */}
+          <div id="top-announcement-bar" className="bg-emerald-950 text-emerald-100 py-2.5 px-6 text-xs font-semibold border-b border-emerald-900">
         <div className="container mx-auto flex flex-col md:flex-row justify-between items-center gap-2">
           <div className="flex flex-wrap justify-center gap-4 md:gap-6 items-center">
             <span className="flex items-center space-x-1.5">
@@ -194,21 +218,62 @@ export default function App() {
 
           {/* Core Scroll Links */}
           <nav className="hidden lg:flex items-center space-x-1">
-            <a href="#hero-slider-container" onClick={(e) => handleNavLinkClick(e, 'hero-slider-container')} className="px-4 py-2 rounded-full text-xs font-bold text-emerald-950 hover:bg-emerald-50 hover:text-emerald-700 transition">
-              Home
-            </a>
             <a href="#about-us-section" onClick={(e) => handleNavLinkClick(e, 'about-us-section')} className="px-4 py-2 rounded-full text-xs font-bold text-emerald-950 hover:bg-emerald-50 hover:text-emerald-700 transition">
               About Us
             </a>
             <a href="#products-catalog-section" onClick={(e) => handleNavLinkClick(e, 'products-catalog-section')} className="px-4 py-2 rounded-full text-xs font-bold text-emerald-950 hover:bg-emerald-50 hover:text-emerald-700 transition">
-              Shop Agrochemicals
+              Certified Catalog
+            </a>
+            <a href="#hero-slider-container" onClick={(e) => handleNavLinkClick(e, 'hero-slider-container')} className="px-4 py-2 rounded-full text-xs font-bold text-emerald-950 hover:bg-emerald-50 hover:text-emerald-700 transition">
+              Home
             </a>
             <a href="#services-highlights-section" onClick={(e) => handleNavLinkClick(e, 'services-highlights-section')} className="px-4 py-2 rounded-full text-xs font-bold text-emerald-950 hover:bg-emerald-50 hover:text-emerald-700 transition">
               Farming Services
             </a>
-            <a href="#faq-section-wrapper" onClick={(e) => handleNavLinkClick(e, 'faq-section-wrapper')} className="px-4 py-2 rounded-full text-xs font-bold text-emerald-950 hover:bg-emerald-50 hover:text-emerald-700 transition">
-              FAQ
-            </a>
+            <div 
+              className="relative group py-2"
+              onMouseEnter={() => setIsAcademyDropdownOpen(true)}
+              onMouseLeave={() => setIsAcademyDropdownOpen(false)}
+            >
+              <button 
+                id="academy-dropdown-trigger"
+                onClick={() => setIsAcademyDropdownOpen(!isAcademyDropdownOpen)}
+                className="flex items-center space-x-1 px-4 py-2 rounded-full text-xs font-bold text-emerald-950 hover:bg-emerald-50 hover:text-emerald-700 transition cursor-pointer"
+              >
+                <span>Academy</span>
+                <ChevronDown className="w-3.5 h-3.5 text-emerald-950/70 transition-transform group-hover:rotate-180" />
+              </button>
+              
+              {/* Dropdown Menu */}
+              <div className={`absolute top-full left-0 mt-1 w-48 bg-white border border-emerald-900/10 rounded-2xl shadow-xl py-2 z-50 transition-all duration-200 ${
+                isAcademyDropdownOpen ? 'opacity-100 visible' : 'opacity-0 invisible group-hover:opacity-100 group-hover:visible'
+              }`}>
+                <a
+                  id="nav-vet-portal-link"
+                  href="/vets"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    setIsAcademyDropdownOpen(false);
+                    navigate('/vets');
+                  }}
+                  className="block px-4 py-2.5 text-xs font-bold text-emerald-950 hover:bg-emerald-50 hover:text-emerald-700 transition"
+                >
+                  Vet Academy
+                </a>
+                <a
+                  id="nav-farmer-portal-link"
+                  href="/farmers"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    setIsAcademyDropdownOpen(false);
+                    navigate('/farmers');
+                  }}
+                  className="block px-4 py-2.5 text-xs font-bold text-emerald-950 hover:bg-emerald-50 hover:text-emerald-700 transition"
+                >
+                  Farmers Academy
+                </a>
+              </div>
+            </div>
             <a href="#blog-section-wrapper" onClick={(e) => handleNavLinkClick(e, 'blog-section-wrapper')} className="px-4 py-2 rounded-full text-xs font-bold text-emerald-950 hover:bg-emerald-50 hover:text-emerald-700 transition">
               Academy Blog
             </a>
@@ -272,11 +337,10 @@ export default function App() {
           <div className="lg:hidden border-t border-emerald-900/5 bg-white shadow-inner transition-all duration-300">
             <nav className="container mx-auto px-6 py-4 flex flex-col space-y-2">
               {[
-                { label: 'Home', href: '#hero-slider-container' },
                 { label: 'About Us', href: '#about-us-section' },
-                { label: 'Shop Agrochemicals', href: '#products-catalog-section' },
+                { label: 'Certified Catalog', href: '#products-catalog-section' },
+                { label: 'Home', href: '#hero-slider-container' },
                 { label: 'Farming Services', href: '#services-highlights-section' },
-                { label: 'FAQ', href: '#faq-section-wrapper' },
                 { label: 'Academy Blog', href: '#blog-section-wrapper' },
               ].map((link) => (
                 <a
@@ -291,6 +355,37 @@ export default function App() {
                   {link.label}
                 </a>
               ))}
+
+              {/* Academy Mobile Submenu */}
+              <div className="border-t border-emerald-900/5 pt-2 mt-2">
+                <span className="px-4 text-[10px] font-bold uppercase tracking-wider text-emerald-600 block mb-1">
+                  Academy Portals
+                </span>
+                <a
+                  href="/vets"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    setIsMobileMenuOpen(false);
+                    navigate('/vets');
+                  }}
+                  className="flex items-center justify-between px-4 py-2.5 rounded-xl text-xs font-bold text-emerald-950 hover:bg-emerald-50 hover:text-emerald-700 transition"
+                >
+                  <span>Vet Academy</span>
+                  <ChevronRight className="w-3.5 h-3.5 text-emerald-600" />
+                </a>
+                <a
+                  href="/farmers"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    setIsMobileMenuOpen(false);
+                    navigate('/farmers');
+                  }}
+                  className="flex items-center justify-between px-4 py-2.5 rounded-xl text-xs font-bold text-emerald-950 hover:bg-emerald-50 hover:text-emerald-700 transition"
+                >
+                  <span>Farmers Academy</span>
+                  <ChevronRight className="w-3.5 h-3.5 text-emerald-600" />
+                </a>
+              </div>
               <button
                 onClick={() => {
                   setIsMobileMenuOpen(false);
@@ -322,8 +417,23 @@ export default function App() {
           </div>
         )}
       </header>
+        </>
+      )}
 
-      {selectedBlogPost ? (
+      {currentPath === '/vets' ? (
+        <VetAcademyPortal onBack={() => navigate('/')} />
+      ) : currentPath === '/farmers' ? (
+        <FarmersAcademyPortal 
+          onBack={() => navigate('/')} 
+          onBuyAgrochemicals={() => {
+            navigate('/');
+            setTimeout(() => {
+              const el = document.getElementById('products-catalog-section');
+              el?.scrollIntoView({ behavior: 'smooth' });
+            }, 150);
+          }}
+        />
+      ) : selectedBlogPost ? (
         <BlogDetail 
           post={selectedBlogPost} 
           onBack={() => {
@@ -841,89 +951,91 @@ export default function App() {
       )}
 
       {/* 15. BRANDED FOOTER */}
-      <footer id="main-site-footer" className="mt-auto bg-emerald-950 text-emerald-100/80 pt-16 pb-8 border-t border-emerald-900 relative overflow-hidden">
-        <div className="absolute bottom-0 left-0 right-0 h-40 bg-gradient-to-t from-emerald-900/30 to-transparent pointer-events-none" />
-        
-        <div className="container mx-auto px-6">
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-12 gap-10 md:gap-12">
-            
-            {/* Branding Column */}
-            <div className="sm:col-span-2 md:col-span-4 space-y-6">
-              <a href="#" className="flex items-center space-x-3 group">
-                <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-emerald-500 to-emerald-700 flex items-center justify-center text-white font-black font-serif text-lg shadow-md">
-                  M
+      {!isAcademyRoute && (
+        <footer id="main-site-footer" className="mt-auto bg-emerald-950 text-emerald-100/80 pt-16 pb-8 border-t border-emerald-900 relative overflow-hidden">
+          <div className="absolute bottom-0 left-0 right-0 h-40 bg-gradient-to-t from-emerald-900/30 to-transparent pointer-events-none" />
+          
+          <div className="container mx-auto px-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-12 gap-10 md:gap-12">
+              
+              {/* Branding Column */}
+              <div className="sm:col-span-2 md:col-span-4 space-y-6">
+                <a href="#" className="flex items-center space-x-3 group">
+                  <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-emerald-500 to-emerald-700 flex items-center justify-center text-white font-black font-serif text-lg shadow-md">
+                    M
+                  </div>
+                  <span className="font-serif text-xl font-bold text-white tracking-tight leading-none">Maxim Vet</span>
+                </a>
+                <p className="text-xs md:text-sm leading-relaxed text-emerald-100/70 max-w-sm">
+                  Kenya’s highly trusted supplier of KEBS and PCPB certified agricultural inputs, veterinary medications, biological crop boosters, and farm knapsacks. Empowering smallholders since 1996.
+                </p>
+                <div className="flex space-x-3 pt-2">
+                  <a href="#" className="w-9 h-9 rounded-full bg-white/5 hover:bg-white/10 flex items-center justify-center transition border border-white/5" aria-label="Facebook">
+                    <Facebook className="w-4 h-4 text-emerald-300" />
+                  </a>
+                  <a href="#" className="w-9 h-9 rounded-full bg-white/5 hover:bg-white/10 flex items-center justify-center transition border border-white/5" aria-label="Instagram">
+                    <Instagram className="w-4 h-4 text-emerald-300" />
+                  </a>
+                  <a href="#" className="w-9 h-9 rounded-full bg-white/5 hover:bg-white/10 flex items-center justify-center transition border border-white/5" aria-label="LinkedIn">
+                    <Linkedin className="w-4 h-4 text-emerald-300" />
+                  </a>
                 </div>
-                <span className="font-serif text-xl font-bold text-white tracking-tight leading-none">Maxim Vet</span>
-              </a>
-              <p className="text-xs md:text-sm leading-relaxed text-emerald-100/70 max-w-sm">
-                Kenya’s highly trusted supplier of KEBS and PCPB certified agricultural inputs, veterinary medications, biological crop boosters, and farm knapsacks. Empowering smallholders since 1996.
-              </p>
-              <div className="flex space-x-3 pt-2">
-                <a href="#" className="w-9 h-9 rounded-full bg-white/5 hover:bg-white/10 flex items-center justify-center transition border border-white/5" aria-label="Facebook">
-                  <Facebook className="w-4 h-4 text-emerald-300" />
-                </a>
-                <a href="#" className="w-9 h-9 rounded-full bg-white/5 hover:bg-white/10 flex items-center justify-center transition border border-white/5" aria-label="Instagram">
-                  <Instagram className="w-4 h-4 text-emerald-300" />
-                </a>
-                <a href="#" className="w-9 h-9 rounded-full bg-white/5 hover:bg-white/10 flex items-center justify-center transition border border-white/5" aria-label="LinkedIn">
-                  <Linkedin className="w-4 h-4 text-emerald-300" />
-                </a>
+              </div>
+
+              {/* Links Column 1 */}
+              <div className="sm:col-span-1 md:col-span-3 space-y-4 text-left">
+                <h5 className="text-xs font-bold uppercase tracking-wider text-emerald-300 border-b border-emerald-900 pb-2 sm:border-0 sm:pb-0">Catalog Ranges</h5>
+                <ul className="space-y-2.5 text-xs text-emerald-200/80">
+                  <li><a href="#products-catalog-section" className="hover:text-white hover:underline decoration-emerald-500 underline-offset-4 transition">Crop Protection</a></li>
+                  <li><a href="#products-catalog-section" className="hover:text-white hover:underline decoration-emerald-500 underline-offset-4 transition">Biological Fungicides</a></li>
+                  <li><a href="#products-catalog-section" className="hover:text-white hover:underline decoration-emerald-500 underline-offset-4 transition">Dairy Cow Boosters</a></li>
+                  <li><a href="#products-catalog-section" className="hover:text-white hover:underline decoration-emerald-500 underline-offset-4 transition">Field Spray Pumps</a></li>
+                  <li><a href="#products-catalog-section" className="hover:text-white hover:underline decoration-emerald-500 underline-offset-4 transition">High-Yield Seeds</a></li>
+                </ul>
+              </div>
+
+              {/* Links Column 2 */}
+              <div className="sm:col-span-1 md:col-span-3 space-y-4 text-left">
+                <h5 className="text-xs font-bold uppercase tracking-wider text-emerald-300 border-b border-emerald-900 pb-2 sm:border-0 sm:pb-0">Farming Services</h5>
+                <ul className="space-y-2.5 text-xs text-emerald-200/80">
+                  <li><button id="f-link-vet" onClick={() => handleOpenBooking('vet')} className="hover:text-white hover:underline decoration-emerald-500 underline-offset-4 transition text-left cursor-pointer">Veterinary Booking</button></li>
+                  <li><button id="f-link-soil" onClick={() => handleOpenBooking('soil')} className="hover:text-white hover:underline decoration-emerald-500 underline-offset-4 transition text-left cursor-pointer">Soil Lab Sampling</button></li>
+                  <li><button id="f-link-agronomy" onClick={() => handleOpenBooking('agronomy')} className="hover:text-white hover:underline decoration-emerald-500 underline-offset-4 transition text-left cursor-pointer">Agronomy Guidance</button></li>
+                  <li><button id="f-link-delivery" onClick={() => handleOpenBooking('delivery')} className="hover:text-white hover:underline decoration-emerald-500 underline-offset-4 transition text-left cursor-pointer">Cooperative Dispatch</button></li>
+                </ul>
+              </div>
+
+              {/* Contact details */}
+              <div className="sm:col-span-2 md:col-span-2 space-y-4 text-left text-xs">
+                <h5 className="text-xs font-bold uppercase tracking-wider text-emerald-300 border-b border-emerald-900 pb-2 sm:border-0 sm:pb-0">Nairobi Headquarters</h5>
+                <div className="space-y-3 text-emerald-200/80">
+                  <p className="leading-relaxed">
+                    Industrial Area Main Block, Commercial Street, Nairobi, Kenya.
+                  </p>
+                  <p className="leading-relaxed">
+                    <span className="block font-medium text-emerald-300">Phone:</span>
+                    +254 712 345 678
+                  </p>
+                  <p className="leading-relaxed">
+                    <span className="block font-medium text-emerald-300">Office:</span>
+                    info@maximvet.co.ke
+                  </p>
+                </div>
+              </div>
+
+            </div>
+
+            <div className="border-t border-emerald-900/60 mt-12 pt-8 flex flex-col sm:flex-row justify-between items-center gap-4 text-[11px] text-emerald-300/60 text-center sm:text-left">
+              <span>© 2026 Maxim Vet Ltd. All rights reserved. Registered Agribusiness Kenya.</span>
+              <div className="flex flex-wrap justify-center gap-x-6 gap-y-2 text-emerald-200/40">
+                <a href="#" className="hover:text-white transition">Privacy Policy</a>
+                <a href="#" className="hover:text-white transition">Terms of Service</a>
+                <a href="#" className="hover:text-white transition">PCPB Licenses</a>
               </div>
             </div>
-
-            {/* Links Column 1 */}
-            <div className="sm:col-span-1 md:col-span-3 space-y-4 text-left">
-              <h5 className="text-xs font-bold uppercase tracking-wider text-emerald-300 border-b border-emerald-900 pb-2 sm:border-0 sm:pb-0">Catalog Ranges</h5>
-              <ul className="space-y-2.5 text-xs text-emerald-200/80">
-                <li><a href="#products-catalog-section" className="hover:text-white hover:underline decoration-emerald-500 underline-offset-4 transition">Crop Protection</a></li>
-                <li><a href="#products-catalog-section" className="hover:text-white hover:underline decoration-emerald-500 underline-offset-4 transition">Biological Fungicides</a></li>
-                <li><a href="#products-catalog-section" className="hover:text-white hover:underline decoration-emerald-500 underline-offset-4 transition">Dairy Cow Boosters</a></li>
-                <li><a href="#products-catalog-section" className="hover:text-white hover:underline decoration-emerald-500 underline-offset-4 transition">Field Spray Pumps</a></li>
-                <li><a href="#products-catalog-section" className="hover:text-white hover:underline decoration-emerald-500 underline-offset-4 transition">High-Yield Seeds</a></li>
-              </ul>
-            </div>
-
-            {/* Links Column 2 */}
-            <div className="sm:col-span-1 md:col-span-3 space-y-4 text-left">
-              <h5 className="text-xs font-bold uppercase tracking-wider text-emerald-300 border-b border-emerald-900 pb-2 sm:border-0 sm:pb-0">Farming Services</h5>
-              <ul className="space-y-2.5 text-xs text-emerald-200/80">
-                <li><button id="f-link-vet" onClick={() => handleOpenBooking('vet')} className="hover:text-white hover:underline decoration-emerald-500 underline-offset-4 transition text-left cursor-pointer">Veterinary Booking</button></li>
-                <li><button id="f-link-soil" onClick={() => handleOpenBooking('soil')} className="hover:text-white hover:underline decoration-emerald-500 underline-offset-4 transition text-left cursor-pointer">Soil Lab Sampling</button></li>
-                <li><button id="f-link-agronomy" onClick={() => handleOpenBooking('agronomy')} className="hover:text-white hover:underline decoration-emerald-500 underline-offset-4 transition text-left cursor-pointer">Agronomy Guidance</button></li>
-                <li><button id="f-link-delivery" onClick={() => handleOpenBooking('delivery')} className="hover:text-white hover:underline decoration-emerald-500 underline-offset-4 transition text-left cursor-pointer">Cooperative Dispatch</button></li>
-              </ul>
-            </div>
-
-            {/* Contact details */}
-            <div className="sm:col-span-2 md:col-span-2 space-y-4 text-left text-xs">
-              <h5 className="text-xs font-bold uppercase tracking-wider text-emerald-300 border-b border-emerald-900 pb-2 sm:border-0 sm:pb-0">Nairobi Headquarters</h5>
-              <div className="space-y-3 text-emerald-200/80">
-                <p className="leading-relaxed">
-                  Industrial Area Main Block, Commercial Street, Nairobi, Kenya.
-                </p>
-                <p className="leading-relaxed">
-                  <span className="block font-medium text-emerald-300">Phone:</span>
-                  +254 712 345 678
-                </p>
-                <p className="leading-relaxed">
-                  <span className="block font-medium text-emerald-300">Office:</span>
-                  info@maximvet.co.ke
-                </p>
-              </div>
-            </div>
-
           </div>
-
-          <div className="border-t border-emerald-900/60 mt-12 pt-8 flex flex-col sm:flex-row justify-between items-center gap-4 text-[11px] text-emerald-300/60 text-center sm:text-left">
-            <span>© 2026 Maxim Vet Ltd. All rights reserved. Registered Agribusiness Kenya.</span>
-            <div className="flex flex-wrap justify-center gap-x-6 gap-y-2 text-emerald-200/40">
-              <a href="#" className="hover:text-white transition">Privacy Policy</a>
-              <a href="#" className="hover:text-white transition">Terms of Service</a>
-              <a href="#" className="hover:text-white transition">PCPB Licenses</a>
-            </div>
-          </div>
-        </div>
-      </footer>
+        </footer>
+      )}
 
       {/* 16. DETAILED MODULAR POPUPS */}
       <CartDrawer

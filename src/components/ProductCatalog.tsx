@@ -1,4 +1,4 @@
-import { useState, useMemo, MouseEvent } from 'react';
+import { useState, useMemo, MouseEvent, useEffect } from 'react';
 import { Product } from '../types';
 import { PRODUCTS } from '../data';
 import { Search, Info, Star, Plus, Check, HelpCircle, X, Leaf, ShieldAlert } from 'lucide-react';
@@ -15,6 +15,24 @@ export default function ProductCatalog({ onAddToCart }: ProductCatalogProps) {
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [modalQuantity, setModalQuantity] = useState(1);
   const [addedItemNotificationId, setAddedItemNotificationId] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+
+  // Simulate initial load
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setIsLoading(false);
+    }, 1000);
+    return () => clearTimeout(timer);
+  }, []);
+
+  // Simulate loading on filters/search changes to show off the skeleton loading effect
+  useEffect(() => {
+    setIsLoading(true);
+    const timer = setTimeout(() => {
+      setIsLoading(false);
+    }, 600);
+    return () => clearTimeout(timer);
+  }, [activeTab, searchQuery]);
 
   const filteredProducts = useMemo(() => {
     return PRODUCTS.filter((product) => {
@@ -108,7 +126,49 @@ export default function ProductCatalog({ onAddToCart }: ProductCatalogProps) {
         </div>
 
         {/* Product Grid */}
-        {filteredProducts.length === 0 ? (
+        {isLoading ? (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
+            {Array.from({ length: 8 }).map((_, index) => (
+              <div
+                id={`catalog-skeleton-${index}`}
+                key={`catalog-skeleton-${index}`}
+                className="bg-white rounded-3xl border border-emerald-900/10 overflow-hidden flex flex-col h-full animate-pulse shadow-sm"
+              >
+                {/* Image Skeleton */}
+                <div className="relative aspect-[4/3] w-full bg-emerald-100/30 flex items-center justify-center">
+                  <div className="w-8 h-8 rounded-full bg-emerald-200/20 animate-ping" />
+                </div>
+
+                {/* Body Content Skeleton */}
+                <div className="p-6 flex flex-col flex-1 justify-between space-y-4">
+                  <div className="space-y-3">
+                    {/* Category Tag */}
+                    <div className="h-3 w-16 bg-emerald-100/40 rounded-full" />
+                    {/* Title */}
+                    <div className="h-5 w-4/5 bg-emerald-200/20 rounded" />
+                    {/* Description lines */}
+                    <div className="space-y-1.5 pt-1">
+                      <div className="h-3 w-full bg-emerald-50/70 rounded" />
+                      <div className="h-3 w-5/6 bg-emerald-50/70 rounded" />
+                    </div>
+                  </div>
+
+                  {/* Rating, Price & CTA Section */}
+                  <div className="pt-2 border-t border-emerald-50 space-y-3">
+                    <div className="flex items-center justify-between">
+                      {/* Rating */}
+                      <div className="h-3 w-10 bg-emerald-100/30 rounded" />
+                      {/* Price */}
+                      <div className="h-4.5 w-16 bg-emerald-200/20 rounded" />
+                    </div>
+                    {/* Button */}
+                    <div className="h-9 w-full bg-emerald-100/40 rounded-2xl" />
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : filteredProducts.length === 0 ? (
           <div className="text-center py-24 bg-white rounded-3xl border border-emerald-900/5 shadow-inner">
             <p className="text-emerald-800 text-lg font-medium">No certified products match your criteria.</p>
             <p className="text-emerald-600/70 text-sm mt-1">Please try clearing your search query or choosing another tab.</p>

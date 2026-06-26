@@ -1,4 +1,4 @@
-import { useState, MouseEvent } from 'react';
+import { useState, MouseEvent, useEffect } from 'react';
 import { BLOGS } from '../data';
 import { BlogPost } from '../types';
 import { BookOpen, Calendar, Clock, X, Heart, MessageSquare } from 'lucide-react';
@@ -11,6 +11,15 @@ export default function BlogSection({ onSelectArticle }: BlogSectionProps) {
   const [selectedArticle, setSelectedArticle] = useState<BlogPost | null>(null);
   const [likes, setLikes] = useState<Record<string, number>>({});
   const [likedList, setLikedList] = useState<Record<string, boolean>>({});
+  const [isLoading, setIsLoading] = useState(true);
+
+  // Simulate initial database/API fetch
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setIsLoading(false);
+    }, 1100);
+    return () => clearTimeout(timer);
+  }, []);
 
   const handleLike = (id: string, e: MouseEvent) => {
     e.stopPropagation();
@@ -42,89 +51,137 @@ export default function BlogSection({ onSelectArticle }: BlogSectionProps) {
         </div>
 
         {/* Blog Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-          {BLOGS.map((blog) => {
-            const hasLiked = likedList[blog.id];
-            const likeCount = (likes[blog.id] || 0) + 12; // default 12 starting likes
-            return (
-              <article
-                id={`blog-card-${blog.id}`}
-                key={blog.id}
-                onClick={() => {
-                  if (onSelectArticle) {
-                    onSelectArticle(blog);
-                  } else {
-                    setSelectedArticle(blog);
-                  }
-                }}
-                className="group bg-white rounded-3xl overflow-hidden border border-emerald-900/10 shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300 flex flex-col h-full cursor-pointer"
+        {isLoading ? (
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+            {Array.from({ length: 3 }).map((_, index) => (
+              <div
+                id={`blog-skeleton-${index}`}
+                key={`blog-skeleton-${index}`}
+                className="bg-white rounded-3xl overflow-hidden border border-emerald-900/10 shadow-sm flex flex-col h-full animate-pulse"
               >
-                {/* Blog Image */}
-                <div className="relative aspect-[16/10] bg-emerald-50 overflow-hidden">
-                  <img
-                    src={blog.image}
-                    alt={blog.title}
-                    className="w-full h-full object-cover group-hover:scale-105 transition-all duration-500"
-                    referrerPolicy="no-referrer"
-                  />
-                  <div className="absolute top-4 left-4 bg-emerald-950/80 text-emerald-300 backdrop-blur-md text-[10px] font-bold uppercase tracking-wider px-3 py-1.5 rounded-full">
-                    {blog.category}
-                  </div>
+                {/* Blog Image Skeleton */}
+                <div className="relative aspect-[16/10] bg-emerald-100/30 flex items-center justify-center">
+                  <div className="w-8 h-8 rounded-full bg-emerald-200/20 animate-ping" />
                 </div>
 
-                {/* Body Details */}
+                {/* Body Details Skeleton */}
                 <div className="p-6 flex flex-col flex-1 justify-between space-y-4">
                   <div className="space-y-3">
-                    <div className="flex items-center space-x-3 text-[10px] text-emerald-600 font-bold">
-                      <span className="flex items-center space-x-1">
-                        <Calendar className="w-3 h-3 shrink-0" />
-                        <span>{blog.date}</span>
-                      </span>
-                      <span>•</span>
-                      <span className="flex items-center space-x-1">
-                        <Clock className="w-3 h-3 shrink-0" />
-                        <span>{blog.readTime}</span>
-                      </span>
+                    {/* Date / ReadTime row */}
+                    <div className="flex items-center space-x-3">
+                      <div className="h-3 w-16 bg-emerald-100/40 rounded" />
+                      <div className="h-3.5 w-3 bg-emerald-100/20 rounded" />
+                      <div className="h-3 w-12 bg-emerald-100/40 rounded" />
                     </div>
 
-                    <h3 className="font-serif text-lg font-medium text-emerald-950 leading-snug group-hover:text-emerald-700 transition-colors">
-                      {blog.title}
-                    </h3>
+                    {/* Title */}
+                    <div className="h-5 w-5/6 bg-emerald-200/20 rounded mt-2" />
 
-                    <p className="text-emerald-800/80 text-xs md:text-sm line-clamp-3 leading-relaxed">
-                      {blog.excerpt}
-                    </p>
+                    {/* Excerpt lines */}
+                    <div className="space-y-1.5 pt-1">
+                      <div className="h-3 w-full bg-emerald-50/70 rounded" />
+                      <div className="h-3 w-full bg-emerald-50/70 rounded" />
+                      <div className="h-3 w-2/3 bg-emerald-50/70 rounded" />
+                    </div>
                   </div>
 
-                  {/* Like/Comment metrics */}
+                  {/* Likes/Comments/CTA Section */}
                   <div className="pt-4 border-t border-emerald-50 flex items-center justify-between">
-                    <span className="text-xs font-bold text-emerald-700 group-hover:text-emerald-600 transition-colors flex items-center space-x-1">
-                      <BookOpen className="w-3.5 h-3.5" />
-                      <span>Read Full Guide</span>
-                    </span>
-
-                    <div className="flex items-center space-x-3 text-xs text-emerald-600">
-                      <button
-                        id={`btn-like-${blog.id}`}
-                        onClick={(e) => handleLike(blog.id, e)}
-                        className={`flex items-center space-x-1 font-bold ${
-                          hasLiked ? 'text-rose-500' : 'text-emerald-600/70 hover:text-rose-500'
-                        }`}
-                      >
-                        <Heart className={`w-3.5 h-3.5 ${hasLiked ? 'fill-rose-500' : ''}`} />
-                        <span>{likeCount}</span>
-                      </button>
-                      <span className="flex items-center space-x-1 text-emerald-600/70">
-                        <MessageSquare className="w-3.5 h-3.5" />
-                        <span>{blog.id === 'blog-1' ? 4 : blog.id === 'blog-2' ? 7 : 3}</span>
-                      </span>
+                    <div className="h-3.5 w-24 bg-emerald-100/40 rounded" />
+                    <div className="flex space-x-3">
+                      <div className="h-3.5 w-8 bg-emerald-100/30 rounded" />
+                      <div className="h-3.5 w-8 bg-emerald-100/30 rounded" />
                     </div>
                   </div>
                 </div>
-              </article>
-            );
-          })}
-        </div>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+            {BLOGS.map((blog) => {
+              const hasLiked = likedList[blog.id];
+              const likeCount = (likes[blog.id] || 0) + 12; // default 12 starting likes
+              return (
+                <article
+                  id={`blog-card-${blog.id}`}
+                  key={blog.id}
+                  onClick={() => {
+                    if (onSelectArticle) {
+                      onSelectArticle(blog);
+                    } else {
+                      setSelectedArticle(blog);
+                    }
+                  }}
+                  className="group bg-white rounded-3xl overflow-hidden border border-emerald-900/10 shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300 flex flex-col h-full cursor-pointer"
+                >
+                  {/* Blog Image */}
+                  <div className="relative aspect-[16/10] bg-emerald-50 overflow-hidden">
+                    <img
+                      src={blog.image}
+                      alt={blog.title}
+                      className="w-full h-full object-cover group-hover:scale-105 transition-all duration-500"
+                      referrerPolicy="no-referrer"
+                    />
+                    <div className="absolute top-4 left-4 bg-emerald-950/80 text-emerald-300 backdrop-blur-md text-[10px] font-bold uppercase tracking-wider px-3 py-1.5 rounded-full">
+                      {blog.category}
+                    </div>
+                  </div>
+
+                  {/* Body Details */}
+                  <div className="p-6 flex flex-col flex-1 justify-between space-y-4">
+                    <div className="space-y-3">
+                      <div className="flex items-center space-x-3 text-[10px] text-emerald-600 font-bold">
+                        <span className="flex items-center space-x-1">
+                          <Calendar className="w-3 h-3 shrink-0" />
+                          <span>{blog.date}</span>
+                        </span>
+                        <span>•</span>
+                        <span className="flex items-center space-x-1">
+                          <Clock className="w-3 h-3 shrink-0" />
+                          <span>{blog.readTime}</span>
+                        </span>
+                      </div>
+
+                      <h3 className="font-serif text-lg font-medium text-emerald-950 leading-snug group-hover:text-emerald-700 transition-colors">
+                        {blog.title}
+                      </h3>
+
+                      <p className="text-emerald-800/80 text-xs md:text-sm line-clamp-3 leading-relaxed">
+                        {blog.excerpt}
+                      </p>
+                    </div>
+
+                    {/* Like/Comment metrics */}
+                    <div className="pt-4 border-t border-emerald-50 flex items-center justify-between">
+                      <span className="text-xs font-bold text-emerald-700 group-hover:text-emerald-600 transition-colors flex items-center space-x-1">
+                        <BookOpen className="w-3.5 h-3.5" />
+                        <span>Read Full Guide</span>
+                      </span>
+
+                      <div className="flex items-center space-x-3 text-xs text-emerald-600">
+                        <button
+                          id={`btn-like-${blog.id}`}
+                          onClick={(e) => handleLike(blog.id, e)}
+                          className={`flex items-center space-x-1 font-bold ${
+                            hasLiked ? 'text-rose-500' : 'text-emerald-600/70 hover:text-rose-500'
+                          }`}
+                        >
+                          <Heart className={`w-3.5 h-3.5 ${hasLiked ? 'fill-rose-500' : ''}`} />
+                          <span>{likeCount}</span>
+                        </button>
+                        <span className="flex items-center space-x-1 text-emerald-600/70">
+                          <MessageSquare className="w-3.5 h-3.5" />
+                          <span>{blog.id === 'blog-1' ? 4 : blog.id === 'blog-2' ? 7 : 3}</span>
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                </article>
+              );
+            })}
+          </div>
+        )}
 
         {/* Article Full Modal */}
         {selectedArticle && (

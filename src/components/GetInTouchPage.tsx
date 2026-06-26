@@ -104,7 +104,7 @@ export default function GetInTouchPage({ onBack, initialTab = 'inquiry', initial
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-start">
             
             {/* Left Column: Office info & Guidelines */}
-            <div className="lg:col-span-5 space-y-8">
+            <div className="order-2 lg:order-1 lg:col-span-5 space-y-8">
               
               {/* Office Card */}
               <div className="bg-emerald-950 text-white p-8 rounded-[32px] border border-emerald-900 shadow-xl relative overflow-hidden text-left">
@@ -172,7 +172,7 @@ export default function GetInTouchPage({ onBack, initialTab = 'inquiry', initial
             </div>
 
             {/* Right Column: Unified Form Section */}
-            <div className="lg:col-span-7 bg-white p-6 md:p-10 rounded-[32px] border border-emerald-950/5 shadow-sm text-left">
+            <div className="order-1 lg:order-2 lg:col-span-7 bg-white p-6 md:p-10 rounded-[32px] border border-emerald-950/5 shadow-sm text-left">
               
               {!submitSuccess ? (
                 <form onSubmit={handleFormSubmit} className="space-y-6">
