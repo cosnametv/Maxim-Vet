@@ -1,5 +1,6 @@
 import React, { useState, useEffect, FormEvent } from 'react';
-import { Product, CartItem, BlogPost } from './types';
+import { Product, CartItem } from './types';
+import { BLOGS } from './data';
 import HeroSlider from './components/HeroSlider';
 import ProductCatalog from './components/ProductCatalog';
 import CartDrawer from './components/CartDrawer';
@@ -9,6 +10,7 @@ import BlogDetail from './components/BlogDetail';
 import GetInTouchPage from './components/GetInTouchPage';
 import VetAcademyPortal from './components/VetAcademyPortal';
 import FarmersAcademyPortal from './components/FarmersAcademyPortal';
+import { handleImageError } from './imageFallback';
 import { 
   Phone, MapPin, Mail, Clock, Facebook, Instagram, Linkedin, 
   ChevronRight, ArrowUp, Send, CheckCircle, Award, Users, 
@@ -16,11 +18,17 @@ import {
   ShoppingCart, Stethoscope, FlaskConical, Menu, X, ChevronDown
 } from 'lucide-react';
 
+// Build a URL-friendly slug from a blog title, e.g. /blog/how-to-apply-npk
+const slugify = (text: string) =>
+  text
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '');
+
 export default function App() {
   const [cartItems, setCartItems] = useState<CartItem[]>([]);
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  const [selectedBlogPost, setSelectedBlogPost] = useState<BlogPost | null>(null);
   const [isGetInTouchActive, setIsGetInTouchActive] = useState(false);
   const [getInTouchTab, setGetInTouchTab] = useState<'inquiry' | 'support'>('inquiry');
   const [getInTouchService, setGetInTouchService] = useState<'vet' | 'soil' | 'agronomy' | 'delivery'>('vet');
@@ -29,6 +37,15 @@ export default function App() {
   const [currentPath, setCurrentPath] = useState(window.location.pathname);
   const [isAcademyDropdownOpen, setIsAcademyDropdownOpen] = useState(false);
   const isAcademyRoute = currentPath === '/vets' || currentPath === '/farmers';
+
+  // Derive the active blog post from the URL, e.g. /blog/<slug>
+  const blogSlug = currentPath.startsWith('/blog/')
+    ? decodeURIComponent(currentPath.slice('/blog/'.length))
+    : null;
+  const selectedBlogPost = blogSlug
+    ? (BLOGS.find((b) => slugify(b.title) === blogSlug) ?? null)
+    : null;
+  const openBlogPost = (post: { title: string }) => navigate('/blog/' + slugify(post.title));
 
   // Sync with browser history popstate
   useEffect(() => {
@@ -43,6 +60,15 @@ export default function App() {
     window.history.pushState(null, '', path);
     setCurrentPath(path);
     window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  // Return to the home route (used when opening overlays like Get In Touch
+  // from a blog/listing route so the correct view renders).
+  const resetToHomeBase = () => {
+    if (window.location.pathname !== '/') {
+      window.history.pushState(null, '', '/');
+      setCurrentPath('/');
+    }
   };
   
   // Newsletter state
@@ -64,14 +90,14 @@ export default function App() {
 
     const timer = setInterval(() => {
       step++;
-      setYearsCount(Math.min(30, Math.floor((30 / steps) * step)));
+      setYearsCount(Math.min(3, Math.floor((3 / steps) * step)));
       setFarmersCount(Math.min(12500, Math.floor((12500 / steps) * step)));
       setProductsCount(Math.min(500, Math.floor((500 / steps) * step)));
       setCountiesCount(Math.min(15, Math.floor((15 / steps) * step)));
 
       if (step >= steps) {
         clearInterval(timer);
-        setYearsCount(30);
+        setYearsCount(3);
         setFarmersCount(12500);
         setProductsCount(500);
         setCountiesCount(15);
@@ -130,7 +156,7 @@ export default function App() {
     setGetInTouchTab('support');
     setGetInTouchService(service);
     setIsGetInTouchActive(true);
-    setSelectedBlogPost(null);
+    resetToHomeBase();
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
@@ -143,10 +169,13 @@ export default function App() {
   };
 
   const handleNavLinkClick = (e: React.MouseEvent<HTMLAnchorElement>, targetId: string) => {
-    if (selectedBlogPost || isGetInTouchActive) {
+    if (selectedBlogPost || isGetInTouchActive || currentPath !== '/') {
       e.preventDefault();
-      setSelectedBlogPost(null);
       setIsGetInTouchActive(false);
+      if (currentPath !== '/') {
+        window.history.pushState(null, '', '/');
+        setCurrentPath('/');
+      }
       setTimeout(() => {
         const el = document.getElementById(targetId);
         if (el) {
@@ -159,11 +188,14 @@ export default function App() {
   };
 
   const handleLogoClick = (e: React.MouseEvent<HTMLAnchorElement>) => {
-    if (selectedBlogPost || isGetInTouchActive) {
+    if (selectedBlogPost || isGetInTouchActive || currentPath !== '/') {
       e.preventDefault();
-      setSelectedBlogPost(null);
       setIsGetInTouchActive(false);
-      window.scrollTo({ top: 0, behavior: 'smooth' });
+      if (currentPath !== '/') {
+        navigate('/');
+      } else {
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      }
     }
   };
 
@@ -176,32 +208,16 @@ export default function App() {
         <>
           {/* 1. TOP ANNOUNCEMENT BAR */}
           <div id="top-announcement-bar" className="bg-emerald-950 text-emerald-100 py-2.5 px-6 text-xs font-semibold border-b border-emerald-900">
-        <div className="container mx-auto flex flex-col md:flex-row justify-between items-center gap-2">
-          <div className="flex flex-wrap justify-center gap-4 md:gap-6 items-center">
-            <span className="flex items-center space-x-1.5">
-              <MapPin className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
-              <span>Nairobi Industrial Area, Kenya</span>
-            </span>
-            <span className="hidden md:inline-block text-emerald-800">|</span>
-            <span className="flex items-center space-x-1.5">
-              <Clock className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
-              <span>Mon – Sat, 8:00 AM – 6:00 PM (EAT)</span>
-            </span>
-          </div>
-          
-          <div className="flex items-center space-x-4">
-            <div className="flex space-x-2">
-              <a href="#" className="w-6 h-6 rounded-full bg-white/5 hover:bg-white/15 flex items-center justify-center transition" aria-label="Facebook">
-                <Facebook className="w-3 h-3 text-emerald-300" />
-              </a>
-              <a href="#" className="w-6 h-6 rounded-full bg-white/5 hover:bg-white/15 flex items-center justify-center transition" aria-label="Instagram">
-                <Instagram className="w-3 h-3 text-emerald-300" />
-              </a>
-              <a href="#" className="w-6 h-6 rounded-full bg-white/5 hover:bg-white/15 flex items-center justify-center transition" aria-label="LinkedIn">
-                <Linkedin className="w-3 h-3 text-emerald-300" />
-              </a>
-            </div>
-          </div>
+        <div className="container mx-auto flex flex-wrap justify-center gap-x-4 gap-y-1 items-center">
+          <span className="flex items-center space-x-1.5">
+            <MapPin className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
+            <span>Nairobi Industrial Area, Kenya</span>
+          </span>
+          <span className="hidden md:inline-block text-emerald-800">|</span>
+          <span className="flex items-center space-x-1.5">
+            <Clock className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
+            <span>Mon – Sat, 8:00 AM – 6:00 PM (EAT)</span>
+          </span>
         </div>
       </div>
 
@@ -302,7 +318,7 @@ export default function App() {
               onClick={() => {
                 setIsGetInTouchActive(true);
                 setGetInTouchTab('inquiry');
-                setSelectedBlogPost(null);
+                resetToHomeBase();
                 window.scrollTo({ top: 0, behavior: 'smooth' });
               }} 
               className="ml-2 inline-flex items-center px-5 py-2.5 rounded-full text-xs font-bold text-white bg-gradient-to-r from-emerald-600 to-emerald-500 hover:from-emerald-500 hover:to-emerald-400 shadow-md shadow-emerald-600/25 transition transform hover:-translate-y-0.5 cursor-pointer"
@@ -410,7 +426,7 @@ export default function App() {
                     setIsMobileMenuOpen(false);
                     setIsGetInTouchActive(true);
                     setGetInTouchTab('inquiry');
-                    setSelectedBlogPost(null);
+                    resetToHomeBase();
                     window.scrollTo({ top: 0, behavior: 'smooth' });
                   }}
                   className="w-full text-center px-4 py-3 rounded-xl text-xs font-bold text-white bg-gradient-to-r from-emerald-600 to-emerald-500 hover:from-emerald-500 hover:to-emerald-400 shadow-md shadow-emerald-600/25 transition cursor-pointer"
@@ -441,14 +457,13 @@ export default function App() {
       ) : selectedBlogPost ? (
         <BlogDetail 
           post={selectedBlogPost} 
-          onBack={() => {
-            setSelectedBlogPost(null);
-            setTimeout(() => {
-              const el = document.getElementById('blog-section-wrapper');
-              if (el) el.scrollIntoView({ behavior: 'smooth' });
-            }, 100);
-          }} 
-          onSelectPost={(post) => setSelectedBlogPost(post)}
+          onSelectPost={(post) => openBlogPost(post)}
+          onViewAll={() => navigate('/blogs')}
+        />
+      ) : currentPath === '/blogs' ? (
+        <BlogSection
+          variant="page"
+          onSelectArticle={(blog) => openBlogPost(blog)}
         />
       ) : isGetInTouchActive ? (
         <GetInTouchPage 
@@ -475,19 +490,28 @@ export default function App() {
       {/* 5. CATEGORIES SECTIONS */}
       <section id="categories-section" className="py-20 bg-emerald-50/40">
         <div className="container mx-auto px-6">
-          <div className="flex flex-col md:flex-row md:items-end justify-between mb-16 gap-4">
+          <div className="flex flex-col md:flex-row md:items-end justify-between mb-8 md:mb-16 gap-4">
             <div className="space-y-4 max-w-xl text-left">
               <span className="text-xs md:text-sm font-bold tracking-widest text-emerald-600 uppercase">Browse Catalog</span>
-              <h2 className="font-serif text-3xl md:text-5xl font-medium tracking-tight text-emerald-950">
-                Explore Our Range
-              </h2>
+              <div className="flex items-end justify-between gap-3">
+                <h2 className="font-serif text-3xl md:text-5xl font-medium tracking-tight text-emerald-950">
+                  Explore Our Range
+                </h2>
+                <a
+                  href="#products-catalog-section"
+                  className="md:hidden text-[11px] font-bold text-emerald-700 hover:text-emerald-600 transition flex items-center gap-1 border-b border-emerald-700 pb-1 shrink-0"
+                >
+                  <span>View all</span>
+                  <ChevronRight className="w-3.5 h-3.5" />
+                </a>
+              </div>
               <p className="text-emerald-800 text-sm">
                 Invest in genuine agricultural compound lines, certified hybrid seeds, and professional high-density spray pumps.
               </p>
             </div>
             <a
               href="#products-catalog-section"
-              className="text-xs font-bold text-emerald-700 hover:text-emerald-600 transition flex items-center space-x-1 border-b border-emerald-700 pb-1 self-start shrink-0"
+              className="hidden md:flex text-xs font-bold text-emerald-700 hover:text-emerald-600 transition items-center space-x-1 border-b border-emerald-700 pb-1 self-start shrink-0"
             >
               <span>View all inventory catalog</span>
               <ChevronRight className="w-3.5 h-3.5" />
@@ -495,26 +519,28 @@ export default function App() {
           </div>
 
           {/* Bento Grid layout */}
-          <div className="grid grid-cols-1 md:grid-cols-12 gap-6">
+          <div className="grid grid-cols-2 md:grid-cols-12 gap-3 sm:gap-6">
             
             {/* Box 1 (Large) */}
             <a
               href="#products-catalog-section"
-              className="md:col-span-8 rounded-[32px] overflow-hidden relative min-h-[300px] border border-emerald-900/10 shadow-sm group hover:shadow-lg transition-all"
+              className="col-span-2 md:col-span-8 rounded-3xl sm:rounded-[32px] overflow-hidden relative min-h-[220px] sm:min-h-[300px] border border-emerald-900/10 shadow-sm group hover:shadow-lg transition-all"
             >
               <img
                 src="https://images.unsplash.com/photo-1595974482597-4b8da8879bc5?w=800&auto=format&fit=crop&q=80"
                 alt="Crop Health Products"
                 className="absolute inset-0 w-full h-full object-cover group-hover:scale-102 transition duration-500"
                 referrerPolicy="no-referrer"
+                loading="lazy"
+                onError={handleImageError}
               />
               <div className="absolute inset-0 bg-gradient-to-t from-emerald-950/90 via-emerald-950/40 to-transparent" />
-              <div className="absolute bottom-8 left-8 right-8 text-white space-y-2">
-                <span className="text-[9px] font-bold tracking-widest uppercase bg-emerald-600 text-white px-2.5 py-1 rounded-full">
+              <div className="absolute bottom-4 left-4 right-4 sm:bottom-8 sm:left-8 sm:right-8 text-white space-y-1.5 sm:space-y-2">
+                <span className="text-[8px] sm:text-[9px] font-bold tracking-widest uppercase bg-emerald-600 text-white px-2 sm:px-2.5 py-0.5 sm:py-1 rounded-full">
                   Pesticides &amp; Growth Booster
                 </span>
-                <h3 className="font-serif text-2xl font-semibold leading-tight text-white">Crop Protection &amp; Fertilisers</h3>
-                <p className="text-xs text-emerald-100/90 max-w-lg">
+                <h3 className="font-serif text-lg sm:text-2xl font-semibold leading-tight text-white">Crop Protection &amp; Fertilisers</h3>
+                <p className="text-[11px] sm:text-xs text-emerald-100/90 max-w-lg line-clamp-2 sm:line-clamp-none">
                   Acquire certified selective crop boosters, insecticides, biological fungicides, and NPK blends from Bayer, Syngenta, and Osho.
                 </p>
               </div>
@@ -523,21 +549,23 @@ export default function App() {
             {/* Box 2 (Medium) */}
             <a
               href="#products-catalog-section"
-              className="md:col-span-4 rounded-[32px] overflow-hidden relative min-h-[300px] border border-emerald-900/10 shadow-sm group hover:shadow-lg transition-all"
+              className="col-span-2 md:col-span-4 rounded-3xl sm:rounded-[32px] overflow-hidden relative min-h-[200px] sm:min-h-[300px] border border-emerald-900/10 shadow-sm group hover:shadow-lg transition-all"
             >
               <img
                 src="https://images.unsplash.com/photo-1570042225831-d98fa7577f1e?w=600&auto=format&fit=crop&q=80"
                 alt="Animal Health"
                 className="absolute inset-0 w-full h-full object-cover group-hover:scale-102 transition duration-500"
                 referrerPolicy="no-referrer"
+                loading="lazy"
+                onError={handleImageError}
               />
               <div className="absolute inset-0 bg-gradient-to-t from-emerald-950/90 via-emerald-950/40 to-transparent" />
-              <div className="absolute bottom-8 left-8 right-8 text-white space-y-2">
-                <span className="text-[9px] font-bold tracking-widest uppercase bg-emerald-600 text-white px-2.5 py-1 rounded-full">
+              <div className="absolute bottom-4 left-4 right-4 sm:bottom-8 sm:left-8 sm:right-8 text-white space-y-1.5 sm:space-y-2">
+                <span className="text-[8px] sm:text-[9px] font-bold tracking-widest uppercase bg-emerald-600 text-white px-2 sm:px-2.5 py-0.5 sm:py-1 rounded-full">
                   Vet Pharmacy
                 </span>
-                <h3 className="font-serif text-xl font-semibold leading-tight text-white">Animal Health Medicines</h3>
-                <p className="text-xs text-emerald-100/90">
+                <h3 className="font-serif text-base sm:text-xl font-semibold leading-tight text-white">Animal Health Medicines</h3>
+                <p className="text-[11px] sm:text-xs text-emerald-100/90 line-clamp-2 sm:line-clamp-none">
                   Top-grade multivitamin supplements, ticks dip compounds, and poultry boosters.
                 </p>
               </div>
@@ -546,116 +574,69 @@ export default function App() {
             {/* Box 3 */}
             <a
               href="#products-catalog-section"
-              className="md:col-span-4 rounded-[32px] overflow-hidden relative min-h-[250px] border border-emerald-900/10 shadow-sm group hover:shadow-lg transition-all"
+              className="col-span-1 md:col-span-4 rounded-3xl sm:rounded-[32px] overflow-hidden relative min-h-[150px] sm:min-h-[250px] border border-emerald-900/10 shadow-sm group hover:shadow-lg transition-all"
             >
               <img
                 src="https://images.unsplash.com/photo-1592982537447-7440770cbfc9?w=600&auto=format&fit=crop&q=80"
                 alt="Farming Equipment"
                 className="absolute inset-0 w-full h-full object-cover group-hover:scale-102 transition duration-500"
                 referrerPolicy="no-referrer"
+                loading="lazy"
+                onError={handleImageError}
               />
               <div className="absolute inset-0 bg-gradient-to-t from-emerald-950/90 via-emerald-950/40 to-transparent" />
-              <div className="absolute bottom-8 left-8 right-8 text-white space-y-2">
-                <span className="text-[9px] font-bold tracking-widest uppercase bg-emerald-600 text-white px-2.5 py-1 rounded-full">
+              <div className="absolute bottom-4 left-4 right-4 sm:bottom-8 sm:left-8 sm:right-8 text-white space-y-1.5 sm:space-y-2">
+                <span className="text-[8px] sm:text-[9px] font-bold tracking-widest uppercase bg-emerald-600 text-white px-2 sm:px-2.5 py-0.5 sm:py-1 rounded-full">
                   Tools
                 </span>
-                <h3 className="font-serif text-lg font-semibold text-white">Farming Sprayers &amp; Knapsacks</h3>
+                <h3 className="font-serif text-sm sm:text-lg font-semibold leading-tight text-white">Farming Sprayers &amp; Knapsacks</h3>
               </div>
             </a>
 
             {/* Box 4 */}
             <a
               href="#products-catalog-section"
-              className="md:col-span-4 rounded-[32px] overflow-hidden relative min-h-[250px] border border-emerald-900/10 shadow-sm group hover:shadow-lg transition-all"
+              className="col-span-1 md:col-span-4 rounded-3xl sm:rounded-[32px] overflow-hidden relative min-h-[150px] sm:min-h-[250px] border border-emerald-900/10 shadow-sm group hover:shadow-lg transition-all"
             >
               <img
                 src="https://images.unsplash.com/photo-1530595467537-0b5996c41f2d?w=600&auto=format&fit=crop&q=80"
                 alt="Hybrid Seeds"
                 className="absolute inset-0 w-full h-full object-cover group-hover:scale-102 transition duration-500"
                 referrerPolicy="no-referrer"
+                loading="lazy"
+                onError={handleImageError}
               />
               <div className="absolute inset-0 bg-gradient-to-t from-emerald-950/90 via-emerald-950/40 to-transparent" />
-              <div className="absolute bottom-8 left-8 right-8 text-white space-y-2">
-                <span className="text-[9px] font-bold tracking-widest uppercase bg-emerald-600 text-white px-2.5 py-1 rounded-full">
+              <div className="absolute bottom-4 left-4 right-4 sm:bottom-8 sm:left-8 sm:right-8 text-white space-y-1.5 sm:space-y-2">
+                <span className="text-[8px] sm:text-[9px] font-bold tracking-widest uppercase bg-emerald-600 text-white px-2 sm:px-2.5 py-0.5 sm:py-1 rounded-full">
                   Planting Seeds
                 </span>
-                <h3 className="font-serif text-lg font-semibold text-white">Hybrid Corn &amp; Vegetable Seeds</h3>
+                <h3 className="font-serif text-sm sm:text-lg font-semibold leading-tight text-white">Hybrid Corn &amp; Vegetable Seeds</h3>
               </div>
             </a>
 
             {/* Box 5 */}
             <a
               href="#products-catalog-section"
-              className="md:col-span-4 rounded-[32px] overflow-hidden relative min-h-[250px] border border-emerald-900/10 shadow-sm group hover:shadow-lg transition-all"
+              className="col-span-2 md:col-span-4 rounded-3xl sm:rounded-[32px] overflow-hidden relative min-h-[150px] sm:min-h-[250px] border border-emerald-900/10 shadow-sm group hover:shadow-lg transition-all"
             >
               <img
                 src="https://images.unsplash.com/photo-1464207687583-a82f637d5c66?w=600&auto=format&fit=crop&q=80"
                 alt="Soil meters"
                 className="absolute inset-0 w-full h-full object-cover group-hover:scale-102 transition duration-500"
                 referrerPolicy="no-referrer"
+                loading="lazy"
+                onError={handleImageError}
               />
               <div className="absolute inset-0 bg-gradient-to-t from-emerald-950/90 via-emerald-950/40 to-transparent" />
-              <div className="absolute bottom-8 left-8 right-8 text-white space-y-2">
-                <span className="text-[9px] font-bold tracking-widest uppercase bg-emerald-600 text-white px-2.5 py-1 rounded-full">
+              <div className="absolute bottom-4 left-4 right-4 sm:bottom-8 sm:left-8 sm:right-8 text-white space-y-1.5 sm:space-y-2">
+                <span className="text-[8px] sm:text-[9px] font-bold tracking-widest uppercase bg-emerald-600 text-white px-2 sm:px-2.5 py-0.5 sm:py-1 rounded-full">
                   Lab Equipment
                 </span>
-                <h3 className="font-serif text-lg font-semibold text-white">Precision Testing Kits &amp; Accessories</h3>
+                <h3 className="font-serif text-sm sm:text-lg font-semibold leading-tight text-white">Precision Testing Kits &amp; Accessories</h3>
               </div>
             </a>
 
-          </div>
-        </div>
-      </section>
-
-      {/* 6. SEASONAL CAMPAIGN/PROMO BLOCK */}
-      <section id="promo-banner-blocks" className="py-20 md:py-28 bg-emerald-950 text-white relative overflow-hidden border-y border-emerald-500/10">
-        <div className="absolute top-0 right-0 w-80 h-80 bg-gradient-to-bl from-emerald-600/25 to-transparent pointer-events-none rounded-full" />
-        <div className="absolute -bottom-20 -left-20 w-80 h-80 bg-gradient-to-tr from-yellow-500/10 to-transparent pointer-events-none rounded-full" />
-
-        <div className="container mx-auto px-6 flex flex-col md:flex-row items-center justify-between gap-12 relative z-10">
-          <div className="space-y-6 max-w-xl text-left">
-            <span className="text-[10px] font-bold uppercase tracking-wider bg-emerald-700 text-emerald-300 px-3 py-1.5 rounded-full inline-block">
-              Seasonal Planting Offer
-            </span>
-            <h3 className="font-serif text-3xl md:text-5xl font-medium leading-tight">
-              Get up to 20% Off on Selective Planting Fertilizers
-            </h3>
-            <p className="text-emerald-100/85 text-xs md:text-sm leading-relaxed">
-              Ensure a heavy harvest this seasonal cycle. We offer price cuts on genuine NPK, DAP, and certified biological soil fungicides with free delivery on bulk orders of more than 15 bags.
-            </p>
-            <div className="flex flex-wrap gap-4 pt-2">
-              <a
-                href="#products-catalog-section"
-                className="px-6 py-3.5 bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs rounded-full shadow-md transition transform hover:-translate-y-0.5"
-              >
-                Shop Seasonal Fertilizer
-              </a>
-              <button
-                id="promo-speak-btn"
-                onClick={() => handleOpenBooking('agronomy')}
-                className="px-6 py-3.5 border border-white/20 hover:border-white/45 bg-white/10 hover:bg-white/15 text-white font-bold text-xs rounded-full transition"
-              >
-                Consult Agronomist
-              </button>
-            </div>
-          </div>
-
-          <div className="relative shrink-0 w-full md:w-80 h-64 bg-emerald-900/60 border border-emerald-500/20 rounded-3xl overflow-hidden shadow-2xl flex flex-col justify-between p-8">
-            <div className="flex justify-between items-start">
-              <span className="text-[11px] font-bold uppercase tracking-widest text-emerald-400">Limited Deal</span>
-              <span className="bg-yellow-400 text-slate-950 font-black text-[10px] px-2.5 py-1 rounded-full shadow-sm">
-                KSh 350 Flat Delivery
-              </span>
-            </div>
-            <div className="space-y-2">
-              <p className="font-serif text-2xl font-semibold leading-tight text-white">Maize &amp; Poultry Packs</p>
-              <p className="text-[11px] text-emerald-200/95 leading-relaxed">
-                Carefully compiled packs containing high-altitude hybrid seeds paired with crop-specific fungicides.
-              </p>
-            </div>
-            <div className="text-xs text-yellow-400 font-bold">
-              ★ 4.9 Rating from 450+ Cooperatives
-            </div>
           </div>
         </div>
       </section>
@@ -670,22 +651,15 @@ export default function App() {
             
             {/* Image side with Float card */}
             <div className="relative">
-              <div className="aspect-[4/5] rounded-[40px] overflow-hidden bg-emerald-50 shadow-md">
+              <div className="aspect-[16/11] lg:aspect-[4/5] max-w-sm lg:max-w-none mx-auto rounded-3xl lg:rounded-[40px] overflow-hidden bg-emerald-50 shadow-md">
                 <img
-                  src="https://images.unsplash.com/photo-1550150896-44c33c37227d?w=800&auto=format&fit=crop&q=80"
+                  src="https://images.unsplash.com/photo-1605000797499-95a51c5269ae?w=800&auto=format&fit=crop&q=80"
                   alt="Kenyan Farming Community"
                   className="w-full h-full object-cover"
                   referrerPolicy="no-referrer"
+                loading="lazy"
+                onError={handleImageError}
                 />
-              </div>
-              
-              {/* Floating counter card */}
-              <div className="absolute -bottom-8 -right-4 bg-white p-6 rounded-3xl shadow-2xl border border-emerald-900/5 text-center min-w-[200px] animate-bounce">
-                <span className="block font-serif text-4xl font-extrabold text-emerald-700 leading-none">
-                  {yearsCount}+
-                </span>
-                <span className="text-xs font-bold text-slate-900 mt-2 block">Years of Farmer Trust</span>
-                <span className="text-[10px] text-emerald-600/70 font-semibold mt-0.5 block">Serving Kenya Since 1996</span>
               </div>
             </div>
 
@@ -694,7 +668,7 @@ export default function App() {
               <div className="space-y-4">
                 <span className="text-xs md:text-sm font-bold tracking-widest text-emerald-600 uppercase">Our Story</span>
                 <h2 className="font-serif text-3xl md:text-5xl font-medium tracking-tight text-emerald-950 leading-tight">
-                  30 Years of Sustaining Kenya's Food Security &amp; Livestock
+                  3 Years of Sustaining Kenya's Food Security &amp; Livestock
                 </h2>
                 <p className="text-emerald-800 text-xs md:text-sm leading-relaxed">
                   Established in Nairobi Industrial Area, Maxim Vet has grown to become Kenya’s premier supplier of certified agrochemicals, crop protection lines, veterinary pharmaceuticals, and durable field knapsacks. We work hand-in-hand with agricultural cooperatives, county ministries, and individual smallholders.
@@ -706,6 +680,14 @@ export default function App() {
 
               {/* Grid of counter statistics */}
               <div className="grid grid-cols-2 gap-4">
+                <div className="p-5 rounded-2xl bg-gradient-to-br from-emerald-600 to-emerald-800 border border-emerald-900/10 shadow-md text-center">
+                  <span className="block font-serif text-2xl md:text-3xl font-extrabold text-white leading-none">
+                    {yearsCount}+
+                  </span>
+                  <span className="text-[10px] md:text-xs text-white font-bold mt-2 block">Years of Farmer Trust</span>
+                  <span className="text-[9px] text-emerald-100/80 font-semibold mt-0.5 block">Serving Kenya Since 2023</span>
+                </div>
+
                 <div className="p-5 rounded-2xl bg-emerald-50/60 border border-emerald-900/5">
                   <span className="block font-serif text-2xl md:text-3xl font-extrabold text-emerald-950">
                     {farmersCount.toLocaleString()}+
@@ -720,13 +702,13 @@ export default function App() {
                   <span className="text-[10px] md:text-xs text-emerald-800 font-bold mt-1 block">KEBS Certified Products</span>
                 </div>
 
-                <div className="p-5 rounded-2xl bg-emerald-50/60 border border-emerald-900/5 col-span-2">
+                <div className="p-5 rounded-2xl bg-emerald-50/60 border border-emerald-900/5">
                   <div className="flex items-center justify-between">
                     <div>
                       <span className="block font-serif text-2xl md:text-3xl font-extrabold text-emerald-950">
-                        {countiesCount}+ Counties
+                        {countiesCount}+
                       </span>
-                      <span className="text-[10px] md:text-xs text-emerald-800 font-bold mt-1 block">Nationwide Distribution Network</span>
+                      <span className="text-[10px] md:text-xs text-emerald-800 font-bold mt-1 block">Counties Covered</span>
                     </div>
                     <span className="text-2xl">🇰🇪</span>
                   </div>
@@ -738,7 +720,7 @@ export default function App() {
                   onClick={() => {
                     setIsGetInTouchActive(true);
                     setGetInTouchTab('inquiry');
-                    setSelectedBlogPost(null);
+                    resetToHomeBase();
                     window.scrollTo({ top: 0, behavior: 'smooth' });
                   }}
                   className="btn bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs px-8 py-3.5 rounded-full shadow-md transition transform hover:-translate-y-0.5 cursor-pointer"
@@ -765,88 +747,67 @@ export default function App() {
             </p>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
-            
-            {/* Service 1 */}
-            <article className="bg-white rounded-3xl p-8 border border-emerald-900/10 shadow-sm flex flex-col justify-between space-y-6 hover:shadow-lg transition">
-              <div className="space-y-4">
-                <div className="w-12 h-12 rounded-2xl bg-emerald-50 text-emerald-600 flex items-center justify-center">
-                  <Stethoscope className="w-6 h-6" />
-                </div>
-                <h3 className="font-serif text-lg font-semibold text-emerald-950">Veterinary Clinical Diagnostics</h3>
-                <p className="text-emerald-800/80 text-xs leading-relaxed">
-                  On-farm clinical vaccination, cattle pregnancy checks, tick control reviews, and poultry treatment programs.
-                </p>
-              </div>
-              <button
-                id="btn-service-vet"
-                onClick={() => handleOpenBooking('vet')}
-                className="text-xs font-bold text-emerald-600 hover:text-emerald-500 text-left transition"
-              >
-                Schedule Vet visit →
-              </button>
-            </article>
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 lg:gap-8">
+            {[
+              {
+                id: 'vet',
+                icon: Stethoscope,
+                title: 'Veterinary Clinical Diagnostics',
+                desc: 'On-farm clinical vaccination, cattle pregnancy checks, tick control reviews, and poultry treatment programs.',
+                cta: 'Schedule Vet Visit',
+              },
+              {
+                id: 'soil',
+                icon: FlaskConical,
+                title: 'Soil Nutrient & Lab Testing',
+                desc: 'Complete laboratory analysis of nitrogen, phosphate, potassium, and pH. We supply crop-specific fertilizer plans.',
+                cta: 'Book Soil Test',
+              },
+              {
+                id: 'agronomy',
+                icon: Leaf,
+                title: 'Agronomy Crop Support',
+                desc: 'In-depth guidance regarding selective chemical ratios, armyworm eradication timing, and optimal planting depth.',
+                cta: 'Speak to Agronomist',
+              },
+              {
+                id: 'delivery',
+                icon: Truck,
+                title: 'Nationwide Farm Dispatch',
+                desc: 'Consolidated logistics serving cooperatives, local community agrovets, and private farming fields.',
+                cta: 'Schedule Shipment',
+              },
+            ].map((service) => {
+              const Icon = service.icon;
+              return (
+                <article
+                  key={service.id}
+                  className="group relative bg-white rounded-3xl p-4 sm:p-7 border border-emerald-900/10 shadow-sm flex flex-col h-full overflow-hidden hover:shadow-xl hover:-translate-y-1.5 hover:border-emerald-600/30 transition-all duration-300"
+                >
+                  <div className="absolute -top-12 -right-12 w-32 h-32 rounded-full bg-emerald-50 opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none" />
 
-            {/* Service 2 */}
-            <article className="bg-emerald-950 text-white rounded-3xl p-8 shadow-sm flex flex-col justify-between space-y-6 hover:shadow-lg transition">
-              <div className="space-y-4">
-                <div className="w-12 h-12 rounded-2xl bg-white/10 text-emerald-400 flex items-center justify-center">
-                  <FlaskConical className="w-6 h-6" />
-                </div>
-                <h3 className="font-serif text-lg font-semibold text-white">Soil Nutrient &amp; Lab Testing</h3>
-                <p className="text-emerald-100/80 text-xs leading-relaxed">
-                  Complete laboratory analysis of nitrogen, phosphate, potassium, and pH. We supply crop-specific fertilizer plans.
-                </p>
-              </div>
-              <button
-                id="btn-service-soil"
-                onClick={() => handleOpenBooking('soil')}
-                className="text-xs font-bold text-emerald-300 hover:text-emerald-400 text-left transition"
-              >
-                Book soil test →
-              </button>
-            </article>
+                  <div className="relative w-12 h-12 sm:w-14 sm:h-14 rounded-2xl bg-gradient-to-br from-emerald-500 to-emerald-700 text-white flex items-center justify-center shadow-md shadow-emerald-600/25 group-hover:scale-105 group-hover:-rotate-3 transition-transform duration-300">
+                    <Icon className="w-6 h-6 sm:w-7 sm:h-7" />
+                  </div>
 
-            {/* Service 3 */}
-            <article className="bg-white rounded-3xl p-8 border border-emerald-900/10 shadow-sm flex flex-col justify-between space-y-6 hover:shadow-lg transition">
-              <div className="space-y-4">
-                <div className="w-12 h-12 rounded-2xl bg-emerald-50 text-emerald-600 flex items-center justify-center">
-                  <Leaf className="w-6 h-6" />
-                </div>
-                <h3 className="font-serif text-lg font-semibold text-emerald-950">Agronomy Crop Support</h3>
-                <p className="text-emerald-800/80 text-xs leading-relaxed">
-                  In-depth guidance regarding selective chemical ratios, armyworm eradication timing, and optimal planting depth.
-                </p>
-              </div>
-              <button
-                id="btn-service-agronomy"
-                onClick={() => handleOpenBooking('agronomy')}
-                className="text-xs font-bold text-emerald-600 hover:text-emerald-500 text-left transition"
-              >
-                Speak to agronomist →
-              </button>
-            </article>
+                  <h3 className="font-serif text-base sm:text-lg font-semibold text-emerald-950 mt-4 sm:mt-5 leading-snug relative">
+                    {service.title}
+                  </h3>
+                  <p className="text-emerald-800/75 text-xs leading-relaxed mt-2 flex-1 relative line-clamp-4 sm:line-clamp-none">
+                    {service.desc}
+                  </p>
 
-            {/* Service 4 */}
-            <article className="bg-white rounded-3xl p-8 border border-emerald-900/10 shadow-sm flex flex-col justify-between space-y-6 hover:shadow-lg transition">
-              <div className="space-y-4">
-                <div className="w-12 h-12 rounded-2xl bg-emerald-50 text-emerald-600 flex items-center justify-center">
-                  <Truck className="w-6 h-6" />
-                </div>
-                <h3 className="font-serif text-lg font-semibold text-emerald-950">Nationwide Farm Dispatch</h3>
-                <p className="text-emerald-800/80 text-xs leading-relaxed">
-                  Consolidated logistics serving cooperatives, local community agrovets, and private farming fields.
-                </p>
-              </div>
-              <button
-                id="btn-service-delivery"
-                onClick={() => handleOpenBooking('delivery')}
-                className="text-xs font-bold text-emerald-600 hover:text-emerald-500 text-left transition"
-              >
-                Schedule shipment →
-              </button>
-            </article>
-
+                  <button
+                    id={`btn-service-${service.id}`}
+                    onClick={() => handleOpenBooking(service.id as 'vet' | 'soil' | 'agronomy' | 'delivery')}
+                    className="relative mt-4 sm:mt-6 inline-flex items-center gap-1.5 text-xs font-bold text-emerald-600 group-hover:text-emerald-500 transition cursor-pointer self-start"
+                  >
+                    <span>{service.cta}</span>
+                    <ChevronRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+                  </button>
+                </article>
+              );
+            })}
           </div>
         </div>
       </section>
@@ -855,12 +816,12 @@ export default function App() {
       <FAQSection onWriteToExpert={() => {
         setIsGetInTouchActive(true);
         setGetInTouchTab('inquiry');
-        setSelectedBlogPost(null);
+        resetToHomeBase();
         window.scrollTo({ top: 0, behavior: 'smooth' });
       }} />
 
       {/* 11. BLOG COMPONENT */}
-      <BlogSection onSelectArticle={(blog) => { setSelectedBlogPost(blog); window.scrollTo({ top: 0, behavior: 'smooth' }); }} />
+      <BlogSection onSelectArticle={(blog) => openBlogPost(blog)} onViewAll={() => navigate('/blogs')} />
 
       {/* 12. BRANDS & PARTNERS MARQUEE */}
       <section id="partners-marquee-section" className="py-16 bg-white overflow-hidden">
@@ -871,29 +832,38 @@ export default function App() {
           
           {/* Infinite scrolling marquee with premium side gradient masks */}
           <div className="relative w-full overflow-hidden py-4">
-            <div className="absolute left-0 top-0 bottom-0 w-24 bg-gradient-to-r from-white to-transparent z-10 pointer-events-none" />
-            <div className="absolute right-0 top-0 bottom-0 w-24 bg-gradient-to-l from-white to-transparent z-10 pointer-events-none" />
+            <div className="absolute left-0 top-0 bottom-0 w-10 md:w-24 bg-gradient-to-r from-white to-transparent z-10 pointer-events-none" />
+            <div className="absolute right-0 top-0 bottom-0 w-10 md:w-24 bg-gradient-to-l from-white to-transparent z-10 pointer-events-none" />
             
             <div className="animate-marquee gap-8 md:gap-16 items-center">
-              {[
-                { name: 'Amiran Kenya', bg: 'bg-emerald-50 text-emerald-900' },
-                { name: 'Bayer East Africa', bg: 'bg-teal-50 text-teal-900' },
-                { name: 'Syngenta', bg: 'bg-emerald-50 text-emerald-900' },
-                { name: 'Osho Chemical', bg: 'bg-sky-50 text-sky-900' },
-                { name: 'Twiga Chemicals', bg: 'bg-teal-50 text-teal-900' },
-                { name: 'Elgon Kenya', bg: 'bg-emerald-50 text-emerald-900' }
-              ].concat([
-                { name: 'Amiran Kenya', bg: 'bg-emerald-50 text-emerald-900' },
-                { name: 'Bayer East Africa', bg: 'bg-teal-50 text-teal-900' },
-                { name: 'Syngenta', bg: 'bg-emerald-50 text-emerald-900' },
-                { name: 'Osho Chemical', bg: 'bg-sky-50 text-sky-900' },
-                { name: 'Twiga Chemicals', bg: 'bg-teal-50 text-teal-900' },
-                { name: 'Elgon Kenya', bg: 'bg-emerald-50 text-emerald-900' }
-              ]).map((brand, idx) => (
-                <div key={idx} className={`px-8 py-4 rounded-2xl text-xs font-extrabold tracking-wider uppercase border border-emerald-950/5 shrink-0 select-none mr-8 ${brand.bg}`}>
-                  {brand.name}
-                </div>
-              ))}
+              {(() => {
+                const brands = [
+                  { name: 'Amiran Kenya', bg: 'bg-emerald-50 text-emerald-900', icon: '' },
+                  { name: 'Bayer East Africa', bg: 'bg-teal-50 text-teal-900', icon: 'https://icons.duckduckgo.com/ip3/bayer.com.ico' },
+                  { name: 'Syngenta', bg: 'bg-emerald-50 text-emerald-900', icon: 'https://icons.duckduckgo.com/ip3/syngenta.com.ico' },
+                  { name: 'Osho Chemical', bg: 'bg-sky-50 text-sky-900', icon: 'https://icons.duckduckgo.com/ip3/oshochem.com.ico' },
+                  { name: 'Twiga Chemicals', bg: 'bg-teal-50 text-teal-900', icon: 'https://icons.duckduckgo.com/ip3/twigachemicals.com.ico' },
+                  { name: 'Elgon Kenya', bg: 'bg-emerald-50 text-emerald-900', icon: 'https://icons.duckduckgo.com/ip3/elgonkenya.co.ke.ico' },
+                ];
+                return [...brands, ...brands].map((brand, idx) => (
+                  <div key={idx} className={`flex items-center gap-2 px-4 py-2.5 md:px-6 md:py-3.5 rounded-2xl text-[10px] md:text-xs font-extrabold tracking-wider uppercase border border-emerald-950/5 shrink-0 select-none mr-5 md:mr-8 ${brand.bg}`}>
+                    <span className="relative w-5 h-5 md:w-6 md:h-6 shrink-0 flex items-center justify-center rounded-md bg-black/5 overflow-hidden text-[10px] font-black">
+                      <span className="opacity-70">{brand.name.charAt(0)}</span>
+                      {brand.icon && (
+                        <img
+                          src={brand.icon}
+                          alt={`${brand.name} logo`}
+                          className="absolute inset-0 w-full h-full object-contain bg-white"
+                          loading="lazy"
+                          referrerPolicy="no-referrer"
+                          onError={(e) => { e.currentTarget.style.display = 'none'; }}
+                        />
+                      )}
+                    </span>
+                    <span>{brand.name}</span>
+                  </div>
+                ));
+              })()}
             </div>
           </div>
         </div>
@@ -961,10 +931,10 @@ export default function App() {
           <div className="absolute bottom-0 left-0 right-0 h-40 bg-gradient-to-t from-emerald-900/30 to-transparent pointer-events-none" />
           
           <div className="container mx-auto px-6">
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-12 gap-10 md:gap-12">
+            <div className="grid grid-cols-2 md:grid-cols-12 gap-x-6 gap-y-10 md:gap-12">
               
               {/* Branding Column */}
-              <div className="sm:col-span-2 md:col-span-4 space-y-6">
+              <div className="col-span-2 md:col-span-4 space-y-6">
                 <a href="#" className="flex items-center space-x-3 group">
                   <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-emerald-500 to-emerald-700 flex items-center justify-center text-white font-black font-serif text-lg shadow-md">
                     M
@@ -972,7 +942,7 @@ export default function App() {
                   <span className="font-serif text-xl font-bold text-white tracking-tight leading-none">Maxim Vet</span>
                 </a>
                 <p className="text-xs md:text-sm leading-relaxed text-emerald-100/70 max-w-sm">
-                  Kenya’s highly trusted supplier of KEBS and PCPB certified agricultural inputs, veterinary medications, biological crop boosters, and farm knapsacks. Empowering smallholders since 1996.
+                  Kenya’s highly trusted supplier of KEBS and PCPB certified agricultural inputs, veterinary medications, biological crop boosters, and farm knapsacks. Empowering smallholders since 2023.
                 </p>
                 <div className="flex space-x-3 pt-2">
                   <a href="#" className="w-9 h-9 rounded-full bg-white/5 hover:bg-white/10 flex items-center justify-center transition border border-white/5" aria-label="Facebook">
@@ -988,7 +958,7 @@ export default function App() {
               </div>
 
               {/* Links Column 1 */}
-              <div className="sm:col-span-1 md:col-span-3 space-y-4 text-left">
+              <div className="col-span-1 md:col-span-3 space-y-4 text-left">
                 <h5 className="text-xs font-bold uppercase tracking-wider text-emerald-300 border-b border-emerald-900 pb-2 sm:border-0 sm:pb-0">Catalog Ranges</h5>
                 <ul className="space-y-2.5 text-xs text-emerald-200/80">
                   <li><a href="#products-catalog-section" className="hover:text-white hover:underline decoration-emerald-500 underline-offset-4 transition">Crop Protection</a></li>
@@ -1000,7 +970,7 @@ export default function App() {
               </div>
 
               {/* Links Column 2 */}
-              <div className="sm:col-span-1 md:col-span-3 space-y-4 text-left">
+              <div className="col-span-1 md:col-span-3 space-y-4 text-left">
                 <h5 className="text-xs font-bold uppercase tracking-wider text-emerald-300 border-b border-emerald-900 pb-2 sm:border-0 sm:pb-0">Farming Services</h5>
                 <ul className="space-y-2.5 text-xs text-emerald-200/80">
                   <li><button id="f-link-vet" onClick={() => handleOpenBooking('vet')} className="hover:text-white hover:underline decoration-emerald-500 underline-offset-4 transition text-left cursor-pointer">Veterinary Booking</button></li>
@@ -1011,7 +981,7 @@ export default function App() {
               </div>
 
               {/* Contact details */}
-              <div className="sm:col-span-2 md:col-span-2 space-y-4 text-left text-xs">
+              <div className="col-span-2 md:col-span-2 space-y-4 text-left text-xs">
                 <h5 className="text-xs font-bold uppercase tracking-wider text-emerald-300 border-b border-emerald-900 pb-2 sm:border-0 sm:pb-0">Nairobi Headquarters</h5>
                 <div className="space-y-3 text-emerald-200/80">
                   <p className="leading-relaxed">

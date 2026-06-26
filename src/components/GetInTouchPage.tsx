@@ -1,6 +1,6 @@
 import React, { useState, FormEvent } from 'react';
 import { 
-  ArrowLeft, Mail, Phone, MapPin, Calendar, MessageSquare, 
+  Mail, Phone, MapPin, Calendar, MessageSquare, 
   CheckCircle2, Clock, Send, Shield, User, Building, Info 
 } from 'lucide-react';
 
@@ -78,21 +78,8 @@ export default function GetInTouchPage({ onBack, initialTab = 'inquiry', initial
       <div className="container mx-auto px-6">
         <div className="max-w-6xl mx-auto">
           
-          {/* Back Navigation Bar */}
-          <button
-            id="get-touch-back-btn"
-            onClick={onBack}
-            className="group inline-flex items-center space-x-2 text-xs md:text-sm font-bold text-emerald-800 hover:text-emerald-600 mb-8 transition-colors bg-white px-4 py-2.5 rounded-full shadow-sm border border-emerald-900/5 cursor-pointer"
-          >
-            <ArrowLeft className="w-4 h-4 transition-transform group-hover:-translate-x-1" />
-            <span>Back to Homepage</span>
-          </button>
-
           {/* Page Headers */}
           <div className="text-left max-w-2xl mb-12 space-y-3">
-            <span className="text-[10px] font-bold uppercase tracking-wider text-emerald-700 bg-emerald-100/60 px-3 py-1.5 rounded-full inline-block">
-              Support Desk &amp; Contact Center
-            </span>
             <h1 className="font-serif text-3xl md:text-5xl font-semibold leading-tight text-emerald-950">
               How Can We Help You Grow?
             </h1>

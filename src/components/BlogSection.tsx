@@ -1,13 +1,17 @@
 import { useState, MouseEvent, useEffect } from 'react';
 import { BLOGS } from '../data';
 import { BlogPost } from '../types';
-import { BookOpen, Calendar, Clock, X, Heart, MessageSquare } from 'lucide-react';
+import { BookOpen, Calendar, Clock, X, Heart, MessageSquare, ChevronRight } from 'lucide-react';
+import { handleImageError } from '../imageFallback';
 
 interface BlogSectionProps {
   onSelectArticle?: (blog: BlogPost) => void;
+  onViewAll?: () => void;
+  variant?: 'home' | 'page';
 }
 
-export default function BlogSection({ onSelectArticle }: BlogSectionProps) {
+export default function BlogSection({ onSelectArticle, onViewAll, variant = 'home' }: BlogSectionProps) {
+  const isPage = variant === 'page';
   const [selectedArticle, setSelectedArticle] = useState<BlogPost | null>(null);
   const [likes, setLikes] = useState<Record<string, number>>({});
   const [likedList, setLikedList] = useState<Record<string, boolean>>({});
@@ -32,27 +36,33 @@ export default function BlogSection({ onSelectArticle }: BlogSectionProps) {
   };
 
   return (
-    <section id="blog-section-wrapper" className="py-20 bg-emerald-50">
+    <section id="blog-section-wrapper" className={isPage ? 'py-12 md:py-16 bg-emerald-50 min-h-screen' : 'py-20 bg-emerald-50'}>
       <div className="container mx-auto px-6">
         {/* Header Block */}
         <div className="flex flex-col md:flex-row md:items-end justify-between mb-16 gap-4">
           <div className="space-y-4 max-w-2xl text-left">
             <span className="text-xs md:text-sm font-bold tracking-widest text-emerald-600 uppercase">Farming Academy</span>
             <h2 className="font-serif text-3xl md:text-5xl font-medium tracking-tight text-emerald-950">
-              Latest From Our Agronomist Blog
+              {isPage ? 'Maxim Vet Academy Blog' : 'Latest From Our Agronomist Blog'}
             </h2>
             <p className="text-emerald-800 text-sm md:text-base">
               Stay up-to-date with crop planting checklists, modern livestock supplement guides, and early pest warning signs in East Africa.
             </p>
           </div>
-          <span className="text-xs font-bold text-emerald-700 bg-white border border-emerald-900/10 px-4 py-2.5 rounded-full shrink-0">
-            📚 Over 50+ Practical Articles
-          </span>
+          {!isPage && (
+            <button
+              onClick={() => onViewAll?.()}
+              className="inline-flex items-center gap-1.5 text-xs font-bold text-emerald-700 hover:text-emerald-500 shrink-0 transition group cursor-pointer"
+            >
+              <span>Read All Blogs</span>
+              <ChevronRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+            </button>
+          )}
         </div>
 
         {/* Blog Grid */}
         {isLoading ? (
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+          <div className="grid grid-cols-2 md:grid-cols-3 gap-4 md:gap-8">
             {Array.from({ length: 3 }).map((_, index) => (
               <div
                 id={`blog-skeleton-${index}`}
@@ -98,7 +108,7 @@ export default function BlogSection({ onSelectArticle }: BlogSectionProps) {
             ))}
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+          <div className="grid grid-cols-2 md:grid-cols-3 gap-4 md:gap-8">
             {BLOGS.map((blog) => {
               const hasLiked = likedList[blog.id];
               const likeCount = (likes[blog.id] || 0) + 12; // default 12 starting likes
@@ -122,6 +132,8 @@ export default function BlogSection({ onSelectArticle }: BlogSectionProps) {
                       alt={blog.title}
                       className="w-full h-full object-cover group-hover:scale-105 transition-all duration-500"
                       referrerPolicy="no-referrer"
+                      loading="lazy"
+                      onError={handleImageError}
                     />
                     <div className="absolute top-4 left-4 bg-emerald-950/80 text-emerald-300 backdrop-blur-md text-[10px] font-bold uppercase tracking-wider px-3 py-1.5 rounded-full">
                       {blog.category}
@@ -129,34 +141,34 @@ export default function BlogSection({ onSelectArticle }: BlogSectionProps) {
                   </div>
 
                   {/* Body Details */}
-                  <div className="p-6 flex flex-col flex-1 justify-between space-y-4">
-                    <div className="space-y-3">
-                      <div className="flex items-center space-x-3 text-[10px] text-emerald-600 font-bold">
+                  <div className="p-4 md:p-6 flex flex-col flex-1 justify-between gap-3">
+                    <div className="space-y-1.5">
+                      <div className="flex items-center gap-x-2 gap-y-1 flex-wrap text-[10px] text-emerald-600 font-bold mb-1">
                         <span className="flex items-center space-x-1">
                           <Calendar className="w-3 h-3 shrink-0" />
                           <span>{blog.date}</span>
                         </span>
-                        <span>•</span>
+                        <span className="hidden sm:inline">•</span>
                         <span className="flex items-center space-x-1">
                           <Clock className="w-3 h-3 shrink-0" />
                           <span>{blog.readTime}</span>
                         </span>
                       </div>
 
-                      <h3 className="font-serif text-lg font-medium text-emerald-950 leading-snug group-hover:text-emerald-700 transition-colors">
+                      <h3 className="font-serif text-base md:text-lg font-medium text-emerald-950 leading-snug line-clamp-2 group-hover:text-emerald-700 transition-colors">
                         {blog.title}
                       </h3>
 
-                      <p className="text-emerald-800/80 text-xs md:text-sm line-clamp-3 leading-relaxed">
+                      <p className="text-emerald-800/80 text-xs md:text-sm line-clamp-2 leading-relaxed">
                         {blog.excerpt}
                       </p>
                     </div>
 
                     {/* Like/Comment metrics */}
-                    <div className="pt-4 border-t border-emerald-50 flex items-center justify-between">
+                    <div className="pt-3 border-t border-emerald-50 flex flex-wrap items-center justify-between gap-2">
                       <span className="text-xs font-bold text-emerald-700 group-hover:text-emerald-600 transition-colors flex items-center space-x-1">
-                        <BookOpen className="w-3.5 h-3.5" />
-                        <span>Read Full Guide</span>
+                        <BookOpen className="w-3.5 h-3.5 shrink-0" />
+                        <span>Read Guide</span>
                       </span>
 
                       <div className="flex items-center space-x-3 text-xs text-emerald-600">
@@ -205,6 +217,7 @@ export default function BlogSection({ onSelectArticle }: BlogSectionProps) {
                     alt={selectedArticle.title}
                     className="w-full h-full object-cover"
                     referrerPolicy="no-referrer"
+                    onError={handleImageError}
                   />
                   <div className="absolute inset-0 bg-gradient-to-t from-emerald-950 via-emerald-950/30 to-transparent" />
                   

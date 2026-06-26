@@ -39,3 +39,74 @@ html, body {
   -ms-overflow-style: none;
   scrollbar-width: none;
 }
+
+@keyframes toast-in {
+  0% {
+    opacity: 0;
+    transform: translateY(-12px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.toast-in {
+  animation: toast-in 0.25s ease-out;
+}
+
+/* Content protection for academy lessons */
+.protected-lesson {
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
+}
+
+/* Certificates print as a single landscape page */
+@page {
+  size: A4 landscape;
+  margin: 10mm;
+}
+
+/* Print rules: hide the whole app and show only the certificate overlay
+   (rendered via a portal at <body>). Protected lessons never print. */
+@media print {
+  html, body {
+    height: auto !important;
+    overflow: visible !important;
+    background: #fff !important;
+  }
+
+  /* Hide the entire application UI */
+  #root {
+    display: none !important;
+  }
+
+  /* The certificate overlay collapses to plain, page-flowing content */
+  .certificate-overlay {
+    position: static !important;
+    inset: auto !important;
+    display: block !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    background: #fff !important;
+    backdrop-filter: none !important;
+    overflow: visible !important;
+  }
+  .certificate-overlay > * {
+    max-width: none !important;
+    margin: 0 !important;
+  }
+
+  .printable {
+    box-shadow: none !important;
+    margin: 0 !important;
+    break-inside: avoid !important;
+    page-break-inside: avoid !important;
+  }
+
+  .protected-lesson {
+    display: none !important;
+  }
+}

@@ -2,6 +2,7 @@ import { useState, useMemo, MouseEvent, useEffect } from 'react';
 import { Product } from '../types';
 import { PRODUCTS } from '../data';
 import { Search, Info, Star, Plus, Check, HelpCircle, X, Leaf, ShieldAlert } from 'lucide-react';
+import { handleImageError } from '../imageFallback';
 
 interface ProductCatalogProps {
   onAddToCart: (product: Product, quantity?: number) => void;
@@ -90,13 +91,13 @@ export default function ProductCatalog({ onAddToCart }: ProductCatalogProps) {
         {/* Toolbar: Tabs & Search */}
         <div className="flex flex-col lg:flex-row justify-between items-stretch lg:items-center gap-6 mb-12 bg-white p-4 rounded-3xl border border-emerald-900/10 shadow-sm">
           {/* Tabs */}
-          <div className="flex overflow-x-auto py-1 gap-2 scrollbar-none">
+          <div className="flex flex-wrap gap-2">
             {(['all', 'crop-health', 'animal-health', 'seeds', 'equipment'] as const).map((tab) => (
               <button
                 id={`tab-btn-${tab}`}
                 key={tab}
                 onClick={() => setActiveTab(tab)}
-                className={`px-5 py-3 rounded-2xl text-xs md:text-sm font-semibold tracking-wide whitespace-nowrap transition-all duration-200 ${
+                className={`px-3.5 py-2 md:px-5 md:py-3 rounded-2xl text-[11px] md:text-sm font-semibold tracking-wide whitespace-nowrap transition-all duration-200 ${
                   activeTab === tab
                     ? 'bg-emerald-600 text-white shadow-md'
                     : 'bg-emerald-50/50 text-emerald-800 hover:bg-emerald-50 hover:text-emerald-950'
@@ -127,7 +128,7 @@ export default function ProductCatalog({ onAddToCart }: ProductCatalogProps) {
 
         {/* Product Grid */}
         {isLoading ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 md:gap-8">
             {Array.from({ length: 8 }).map((_, index) => (
               <div
                 id={`catalog-skeleton-${index}`}
@@ -174,7 +175,7 @@ export default function ProductCatalog({ onAddToCart }: ProductCatalogProps) {
             <p className="text-emerald-600/70 text-sm mt-1">Please try clearing your search query or choosing another tab.</p>
           </div>
         ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 md:gap-8">
             {filteredProducts.map((product) => (
               <article
                 id={`product-card-${product.id}`}
@@ -189,6 +190,8 @@ export default function ProductCatalog({ onAddToCart }: ProductCatalogProps) {
                     alt={product.name}
                     className="w-full h-full object-cover group-hover:scale-105 transition-all duration-500"
                     referrerPolicy="no-referrer"
+                    loading="lazy"
+                    onError={handleImageError}
                   />
                   
                   {/* Decorative Gradient overlays */}
@@ -209,12 +212,12 @@ export default function ProductCatalog({ onAddToCart }: ProductCatalogProps) {
                 </div>
 
                 {/* Body Content */}
-                <div className="p-6 flex flex-col flex-1 justify-between space-y-4">
-                  <div className="space-y-2">
+                <div className="p-4 md:p-6 flex flex-col flex-1 justify-between gap-3 md:gap-4">
+                  <div className="space-y-1.5">
                     <span className="text-[10px] font-extrabold uppercase tracking-widest text-emerald-600">
                       {product.category.replace('-', ' ')}
                     </span>
-                    <h3 className="font-serif text-lg font-medium text-emerald-950 leading-snug group-hover:text-emerald-700 transition-colors">
+                    <h3 className="font-serif text-base md:text-lg font-medium text-emerald-950 leading-snug line-clamp-2 group-hover:text-emerald-700 transition-colors">
                       {product.name}
                     </h3>
                     <p className="text-emerald-800/80 text-xs line-clamp-2 leading-relaxed">
@@ -224,7 +227,7 @@ export default function ProductCatalog({ onAddToCart }: ProductCatalogProps) {
 
                   {/* Rating, Price & CTA */}
                   <div className="pt-2 border-t border-emerald-50">
-                    <div className="flex items-center justify-between mb-4">
+                    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1 mb-3 md:mb-4">
                       <div>
                         <span className="text-emerald-500 text-xs font-semibold mr-1">★</span>
                         <span className="text-xs font-bold text-emerald-950">{product.rating}</span>
@@ -286,6 +289,7 @@ export default function ProductCatalog({ onAddToCart }: ProductCatalogProps) {
                       alt={selectedProduct.name}
                       className="w-full h-full object-cover"
                       referrerPolicy="no-referrer"
+                      onError={handleImageError}
                     />
                     <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent" />
                     

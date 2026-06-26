@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { ChevronLeft, ChevronRight, ShoppingBag, ShieldCheck, Tractor, HelpCircle, Sprout, Users } from 'lucide-react';
+import { ShoppingBag, ShieldCheck, Tractor, HelpCircle, Sprout, Users } from 'lucide-react';
+import { handleImageError } from '../imageFallback';
 
 interface Slide {
   title: string;
@@ -88,11 +89,6 @@ export default function HeroSlider({ onShopClick, onConsultClick }: HeroSliderPr
     return () => clearInterval(timer);
   }, [current]);
 
-  const handlePrev = () => {
-    setDirection(-1);
-    setCurrent((prev) => (prev === 0 ? SLIDES.length - 1 : prev - 1));
-  };
-
   const handleNext = () => {
     setDirection(1);
     setCurrent((prev) => (prev === SLIDES.length - 1 ? 0 : prev + 1));
@@ -142,6 +138,7 @@ export default function HeroSlider({ onShopClick, onConsultClick }: HeroSliderPr
               alt=""
               className="w-full h-full object-cover"
               referrerPolicy="no-referrer"
+              onError={handleImageError}
             />
             {/* Rich gradient overlays for premium depth and impeccable typography readability */}
             <div className="absolute inset-0 bg-gradient-to-r from-emerald-950 via-emerald-950/85 to-emerald-950/45" />
@@ -208,7 +205,7 @@ export default function HeroSlider({ onShopClick, onConsultClick }: HeroSliderPr
           <div className="p-8 h-full flex flex-col justify-between relative z-10">
             <span className="text-xs font-bold uppercase tracking-wider text-emerald-400">Standard Certified</span>
             <div className="space-y-2">
-              <p className="font-serif text-2xl text-white font-medium leading-snug">Empowering Kenyan Farmers Since 1996</p>
+              <p className="font-serif text-2xl text-white font-medium leading-snug">Empowering Kenyan Farmers Since 2023</p>
               <p className="text-xs text-emerald-200/80">KEBS & PCPB fully verified products with 100% genuine guarantees.</p>
             </div>
             <div className="flex items-center text-xs text-yellow-400 space-x-1 font-semibold">
@@ -218,24 +215,6 @@ export default function HeroSlider({ onShopClick, onConsultClick }: HeroSliderPr
           </div>
         </div>
       </div>
-
-      {/* Control Buttons */}
-      <button
-        id="hero-prev-btn"
-        onClick={handlePrev}
-        aria-label="Previous Slide"
-        className="absolute left-4 md:left-8 top-1/2 -translate-y-1/2 z-20 w-12 h-12 rounded-full border border-white/10 bg-black/15 hover:bg-black/30 text-white flex items-center justify-center backdrop-blur-md transition-all hover:scale-105"
-      >
-        <ChevronLeft className="w-6 h-6" />
-      </button>
-      <button
-        id="hero-next-btn"
-        onClick={handleNext}
-        aria-label="Next Slide"
-        className="absolute right-4 md:right-8 top-1/2 -translate-y-1/2 z-20 w-12 h-12 rounded-full border border-white/10 bg-black/15 hover:bg-black/30 text-white flex items-center justify-center backdrop-blur-md transition-all hover:scale-105"
-      >
-        <ChevronRight className="w-6 h-6" />
-      </button>
 
       {/* Slide Indicators & Progress Bar */}
       <div className="absolute bottom-16 md:bottom-24 left-1/2 -translate-y-1/2 -translate-x-1/2 z-20 flex flex-col items-center space-y-2">

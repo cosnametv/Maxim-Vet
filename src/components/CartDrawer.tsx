@@ -1,6 +1,7 @@
 import { useState, FormEvent } from 'react';
 import { CartItem } from '../types';
 import { X, Trash2, ShoppingBag, ArrowRight, ShieldCheck, CreditCard, ChevronRight, CheckCircle, ShieldAlert } from 'lucide-react';
+import { handleImageError } from '../imageFallback';
 
 interface CartDrawerProps {
   isOpen: boolean;
@@ -135,6 +136,8 @@ export default function CartDrawer({
                         alt={item.product.name}
                         className="w-14 h-14 object-cover rounded-xl shrink-0 bg-white border border-emerald-100"
                         referrerPolicy="no-referrer"
+                        loading="lazy"
+                        onError={handleImageError}
                       />
                       <div className="flex-1 min-w-0">
                         <h4 className="font-serif text-sm font-medium text-emerald-950 truncate">{item.product.name}</h4>

@@ -1,44 +1,21 @@
-import React, { useState, MouseEvent } from 'react';
+import { useState, MouseEvent } from 'react';
 import { BlogPost } from '../types';
 import { BLOGS } from '../data';
+import { handleImageError } from '../imageFallback';
 import { 
-  ArrowLeft, Calendar, Clock, Heart, MessageSquare, 
-  Share2, Send, CheckCircle2, User, Sparkles, BookOpen 
+  Calendar, Clock, Heart, 
+  Share2, CheckCircle2, User, Sparkles, BookOpen, ChevronRight 
 } from 'lucide-react';
 
 interface BlogDetailProps {
   post: BlogPost;
-  onBack: () => void;
   onSelectPost: (post: BlogPost) => void;
+  onViewAll?: () => void;
 }
 
-interface Comment {
-  id: string;
-  name: string;
-  text: string;
-  date: string;
-}
-
-export default function BlogDetail({ post, onBack, onSelectPost }: BlogDetailProps) {
+export default function BlogDetail({ post, onSelectPost, onViewAll }: BlogDetailProps) {
   const [likes, setLikes] = useState<number>(24);
   const [hasLiked, setHasLiked] = useState<boolean>(false);
-  const [comments, setComments] = useState<Comment[]>([
-    {
-      id: '1',
-      name: 'Samuel Kiprop',
-      text: 'This is an excellent guide. We have been applying NPK late on our maize beds in Trans-Nzoia and losing seedling vigor. Will adjust this season!',
-      date: 'June 19, 2026'
-    },
-    {
-      id: '2',
-      name: 'Wanjiku Kamau',
-      text: 'Thanks Dr. Ndungu. What is the recommended dilution ratio for biological crop boosters when combined with foliar fertilizers?',
-      date: 'June 20, 2026'
-    }
-  ]);
-
-  const [commentName, setCommentName] = useState('');
-  const [commentText, setCommentText] = useState('');
   const [isCopied, setIsCopied] = useState(false);
 
   const handleLike = () => {
@@ -57,22 +34,6 @@ export default function BlogDetail({ post, onBack, onSelectPost }: BlogDetailPro
     setTimeout(() => setIsCopied(false), 2500);
   };
 
-  const handleCommentSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!commentName.trim() || !commentText.trim()) return;
-
-    const newComment: Comment = {
-      id: Date.now().toString(),
-      name: commentName.trim(),
-      text: commentText.trim(),
-      date: 'Just now'
-    };
-
-    setComments([newComment, ...comments]);
-    setCommentName('');
-    setCommentText('');
-  };
-
   // Filter out current post to show related posts
   const relatedPosts = BLOGS.filter(b => b.id !== post.id).slice(0, 2);
 
@@ -81,16 +42,6 @@ export default function BlogDetail({ post, onBack, onSelectPost }: BlogDetailPro
       <div className="container mx-auto px-6">
         <div className="max-w-4xl mx-auto">
         
-        {/* Navigation Action */}
-        <button
-          id="btn-back-to-academy"
-          onClick={onBack}
-          className="group inline-flex items-center space-x-2 text-xs md:text-sm font-bold text-emerald-800 hover:text-emerald-600 mb-8 transition-colors bg-white px-4 py-2.5 rounded-full shadow-sm border border-emerald-900/5 cursor-pointer"
-        >
-          <ArrowLeft className="w-4 h-4 transition-transform group-hover:-translate-x-1" />
-          <span>Back to Agronomy Academy</span>
-        </button>
-
         {/* Article Container */}
         <article className="bg-white rounded-[32px] overflow-hidden shadow-sm border border-emerald-950/5 mb-12">
           
@@ -101,6 +52,7 @@ export default function BlogDetail({ post, onBack, onSelectPost }: BlogDetailPro
               alt={post.title}
               className="w-full h-full object-cover"
               referrerPolicy="no-referrer"
+              onError={handleImageError}
             />
             <div className="absolute inset-0 bg-gradient-to-t from-emerald-950/60 via-transparent to-transparent" />
             <div className="absolute bottom-6 left-6 md:left-10 bg-emerald-600 text-white text-[10px] md:text-xs font-bold uppercase tracking-widest px-4 py-2 rounded-full">
@@ -231,75 +183,20 @@ export default function BlogDetail({ post, onBack, onSelectPost }: BlogDetailPro
           </div>
         </article>
 
-        {/* Dynamic & Interactive Comments Section */}
-        <section id="comments-section" className="bg-white rounded-[32px] p-6 md:p-10 shadow-sm border border-emerald-950/5 mb-12">
-          <h3 className="font-serif text-xl md:text-2xl font-semibold text-emerald-950 mb-8 flex items-center space-x-2">
-            <MessageSquare className="w-5 h-5 text-emerald-600" />
-            <span>Discussion Feed ({comments.length})</span>
-          </h3>
-
-          {/* Add Comment Form */}
-          <form onSubmit={handleCommentSubmit} className="space-y-4 mb-8 bg-slate-50 p-6 rounded-2xl border border-emerald-950/5">
-            <p className="text-xs font-bold text-emerald-900 uppercase tracking-wide">Leave an Expert Comment</p>
-            <div className="grid grid-cols-1 gap-4">
-              <input
-                id="comment-author-name"
-                type="text"
-                required
-                placeholder="Your full name (e.g. Farmer Joseph)"
-                value={commentName}
-                onChange={(e) => setCommentName(e.target.value)}
-                className="w-full px-4 py-3 rounded-xl bg-white border border-emerald-900/10 text-xs md:text-sm text-emerald-950 focus:border-emerald-600 outline-none transition"
-              />
-              <textarea
-                id="comment-body-text"
-                rows={3}
-                required
-                placeholder="Write your farming feedback or question here..."
-                value={commentText}
-                onChange={(e) => setCommentText(e.target.value)}
-                className="w-full px-4 py-3 rounded-xl bg-white border border-emerald-900/10 text-xs md:text-sm text-emerald-950 focus:border-emerald-600 outline-none transition resize-none"
-              />
-            </div>
-            <button
-              id="submit-comment-btn"
-              type="submit"
-              className="inline-flex items-center space-x-2 px-5 py-3 bg-emerald-700 hover:bg-emerald-600 text-white font-bold text-xs rounded-xl shadow-md transition cursor-pointer"
-            >
-              <Send className="w-3.5 h-3.5" />
-              <span>Post Comment</span>
-            </button>
-          </form>
-
-          {/* Comments List */}
-          <div className="space-y-6">
-            {comments.map((c) => (
-              <div key={c.id} className="flex items-start space-x-3 text-left border-b border-slate-50 pb-6 last:border-b-0 last:pb-0">
-                <div className="w-8 h-8 rounded-full bg-emerald-100 flex items-center justify-center text-emerald-800 shrink-0 font-bold text-xs uppercase">
-                  {c.name.charAt(0)}
-                </div>
-                <div className="space-y-1">
-                  <div className="flex items-center space-x-2">
-                    <span className="text-xs md:text-sm font-bold text-emerald-950">{c.name}</span>
-                    <span className="text-[10px] text-emerald-600 font-medium bg-emerald-50 px-2 py-0.5 rounded-full">{c.date}</span>
-                  </div>
-                  <p className="text-xs md:text-sm text-emerald-900/85 leading-relaxed">
-                    {c.text}
-                  </p>
-                </div>
-              </div>
-            ))}
-          </div>
-        </section>
-
         {/* Read Next Section */}
         <section id="read-next-section" className="space-y-6">
           <div className="flex items-center justify-between">
             <h3 className="font-serif text-lg md:text-xl font-semibold text-emerald-950">Academy: What to Read Next</h3>
-            <span className="text-xs font-bold text-emerald-700">More Tips →</span>
+            <button
+              onClick={() => onViewAll?.()}
+              className="inline-flex items-center gap-1 text-xs font-bold text-emerald-700 hover:text-emerald-500 transition cursor-pointer group"
+            >
+              <span>More Tips</span>
+              <ChevronRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+            </button>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="grid grid-cols-2 gap-4 md:gap-6">
             {relatedPosts.map((related) => (
               <div
                 key={related.id}
@@ -315,16 +212,18 @@ export default function BlogDetail({ post, onBack, onSelectPost }: BlogDetailPro
                     alt={related.title}
                     className="w-full h-full object-cover group-hover:scale-105 transition duration-500"
                     referrerPolicy="no-referrer"
+                    loading="lazy"
+                    onError={handleImageError}
                   />
                   <div className="absolute top-3 left-3 bg-emerald-950/80 text-emerald-300 px-2.5 py-1 rounded-full text-[9px] font-bold uppercase tracking-wider">
                     {related.category}
                   </div>
                 </div>
-                <div className="p-5 text-left flex-1 flex flex-col justify-between space-y-3">
-                  <h4 className="font-serif text-sm md:text-base font-semibold text-emerald-950 group-hover:text-emerald-700 transition">
+                <div className="p-4 md:p-5 text-left flex-1 flex flex-col justify-between gap-2">
+                  <h4 className="font-serif text-sm md:text-base font-semibold text-emerald-950 leading-snug line-clamp-2 group-hover:text-emerald-700 transition">
                     {related.title}
                   </h4>
-                  <div className="flex items-center justify-between text-[10px] text-emerald-600 font-bold pt-2 border-t border-slate-50">
+                  <div className="flex flex-wrap items-center justify-between gap-1 text-[10px] text-emerald-600 font-bold pt-2 border-t border-slate-50">
                     <span>{related.date}</span>
                     <span className="flex items-center space-x-1">
                       <BookOpen className="w-3 h-3" />
