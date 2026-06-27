@@ -1,6 +1,6 @@
 import { useState, useMemo, MouseEvent, useEffect } from 'react';
 import { Product } from '../types';
-import { PRODUCTS } from '../data';
+import { useContent } from '../store/contentStore';
 import { Search, Info, Star, Plus, Check, HelpCircle, X, Leaf, ShieldAlert } from 'lucide-react';
 import { handleImageError } from '../imageFallback';
 
@@ -11,6 +11,7 @@ interface ProductCatalogProps {
 type CategoryTab = 'all' | 'crop-health' | 'animal-health' | 'equipment' | 'seeds';
 
 export default function ProductCatalog({ onAddToCart }: ProductCatalogProps) {
+  const { products: PRODUCTS } = useContent();
   const [activeTab, setActiveTab] = useState<CategoryTab>('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
@@ -42,7 +43,7 @@ export default function ProductCatalog({ onAddToCart }: ProductCatalogProps) {
                             product.description.toLowerCase().includes(searchQuery.toLowerCase());
       return matchesTab && matchesSearch;
     });
-  }, [activeTab, searchQuery]);
+  }, [activeTab, searchQuery, PRODUCTS]);
 
   const handleQuickAdd = (product: Product, e: MouseEvent) => {
     e.stopPropagation();

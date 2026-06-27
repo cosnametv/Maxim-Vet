@@ -376,7 +376,7 @@ export default function CartDrawer({
               </div>
               <p className="text-[10px] text-emerald-600/70">
                 {totalAmount > 10000 
-                  ? '🎉 You qualify for FREE shipping across Kenya!'
+                  ? 'You qualify for FREE shipping across Kenya!'
                   : `Add KSh ${(10000 - totalAmount).toLocaleString()} more for free shipping.`}
               </p>
             </div>

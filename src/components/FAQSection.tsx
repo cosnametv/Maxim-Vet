@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { FAQS } from '../data';
+import { useContent } from '../store/contentStore';
 import { Plus, Minus, HelpCircle } from 'lucide-react';
 
 interface FAQSectionProps {
@@ -7,6 +7,7 @@ interface FAQSectionProps {
 }
 
 export default function FAQSection({ onWriteToExpert }: FAQSectionProps) {
+  const { faqs: FAQS } = useContent();
   const [openIndex, setOpenIndex] = useState<number | null>(0);
 
   const toggleIndex = (idx: number) => {

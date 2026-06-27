@@ -1,8 +1,9 @@
 import { useState, MouseEvent, useEffect } from 'react';
-import { BLOGS } from '../data';
+import { useContent } from '../store/contentStore';
 import { BlogPost } from '../types';
 import { BookOpen, Calendar, Clock, X, Heart, MessageSquare, ChevronRight } from 'lucide-react';
 import { handleImageError } from '../imageFallback';
+import ArticleContent from './ArticleContent';
 
 interface BlogSectionProps {
   onSelectArticle?: (blog: BlogPost) => void;
@@ -11,7 +12,10 @@ interface BlogSectionProps {
 }
 
 export default function BlogSection({ onSelectArticle, onViewAll, variant = 'home' }: BlogSectionProps) {
+  const { blogs: BLOGS } = useContent();
   const isPage = variant === 'page';
+  // Home shows only the latest 3; the dedicated /blogs page shows everything.
+  const visibleBlogs = isPage ? BLOGS : BLOGS.slice(0, 3);
   const [selectedArticle, setSelectedArticle] = useState<BlogPost | null>(null);
   const [likes, setLikes] = useState<Record<string, number>>({});
   const [likedList, setLikedList] = useState<Record<string, boolean>>({});
@@ -109,7 +113,7 @@ export default function BlogSection({ onSelectArticle, onViewAll, variant = 'hom
           </div>
         ) : (
           <div className="grid grid-cols-2 md:grid-cols-3 gap-4 md:gap-8">
-            {BLOGS.map((blog) => {
+            {visibleBlogs.map((blog) => {
               const hasLiked = likedList[blog.id];
               const likeCount = (likes[blog.id] || 0) + 12; // default 12 starting likes
               return (
@@ -234,7 +238,7 @@ export default function BlogSection({ onSelectArticle, onViewAll, variant = 'hom
                 {/* Article Core Content */}
                 <div className="p-8 space-y-6 text-emerald-950 text-xs md:text-sm leading-relaxed">
                   <div className="flex items-center space-x-3 text-xs text-emerald-600 font-bold border-b border-emerald-50 pb-4">
-                    <span>By Lead Agronomist • Dr. James Ndungu</span>
+                    <span>By Dr. Paul Kangethe • Lead Agronomist</span>
                     <span>•</span>
                     <span>{selectedArticle.date}</span>
                     <span>•</span>
@@ -245,26 +249,10 @@ export default function BlogSection({ onSelectArticle, onViewAll, variant = 'hom
                     {selectedArticle.excerpt}
                   </p>
 
-                  <p>
-                    Successful agriculture depends heavily on precision. Over the last 15 years, farming parameters across Kenyan highlands (such as Nakuru, Kericho, and Eldoret) have adjusted significantly. In order to maximize maize crops or vegetable yields, growers must analyze their soil chemistry before investing in secondary urea inputs.
-                  </p>
-
-                  <h5 className="font-serif text-base md:text-lg font-bold text-emerald-900 pt-2">Key Management Recommendations</h5>
-                  
-                  <ul className="list-disc pl-5 space-y-2 text-emerald-800">
-                    <li>
-                      <strong>Soil Testing First:</strong> Never apply basal compounds blindly. A basic pH analysis (ideally in February or March) guarantees that soil acidity is appropriate for standard seedling germination.
-                    </li>
-                    <li>
-                      <strong>Timing Compound Fertilizers:</strong> Basal nitrogen-heavy fertilizers like NPK (17:17:17) are best applied immediately on seed bedding. If applied late, seedlings lose essential primary vigor.
-                    </li>
-                    <li>
-                      <strong>Selective Pest Spraying:</strong> Spray selective chemicals like Duduthrin only in late-evening or early-morning cycles to avoid stressing beneficial insect pollinators.
-                    </li>
-                  </ul>
+                  <ArticleContent content={selectedArticle.content} className="space-y-4" />
 
                   <p className="pt-2 bg-emerald-50 p-4 rounded-xl text-[11px] text-emerald-800 border-l-4 border-emerald-600 font-semibold">
-                    💡 Disclaimer: Agricultural chemical applications carry compliance requirements. Always read official PCPB manuals on chemical dilution thresholds before spraying. For customized agronomy guidelines, schedule a soil sampling visit.
+                    Disclaimer: Agricultural chemical applications carry compliance requirements. Always read official PCPB manuals on chemical dilution thresholds before spraying. For customized agronomy guidelines, schedule a soil sampling visit.
                   </p>
 
                   <div className="pt-6 border-t border-emerald-50 flex items-center justify-between">

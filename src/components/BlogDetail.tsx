@@ -1,10 +1,11 @@
 import { useState, MouseEvent } from 'react';
 import { BlogPost } from '../types';
-import { BLOGS } from '../data';
+import { useContent } from '../store/contentStore';
 import { handleImageError } from '../imageFallback';
+import ArticleContent from './ArticleContent';
 import { 
   Calendar, Clock, Heart, 
-  Share2, CheckCircle2, User, Sparkles, BookOpen, ChevronRight 
+  Share2, CheckCircle2, User, BookOpen, ChevronRight 
 } from 'lucide-react';
 
 interface BlogDetailProps {
@@ -14,6 +15,7 @@ interface BlogDetailProps {
 }
 
 export default function BlogDetail({ post, onSelectPost, onViewAll }: BlogDetailProps) {
+  const { blogs: BLOGS } = useContent();
   const [likes, setLikes] = useState<number>(24);
   const [hasLiked, setHasLiked] = useState<boolean>(false);
   const [isCopied, setIsCopied] = useState(false);
@@ -71,7 +73,7 @@ export default function BlogDetail({ post, onSelectPost, onViewAll }: BlogDetail
                 <div className="w-8 h-8 rounded-full bg-emerald-100 flex items-center justify-center text-emerald-800">
                   <User className="w-4 h-4" />
                 </div>
-                <span>By Dr. James Ndungu • Lead Agronomist</span>
+                <span>By Dr. Paul Kangethe • Lead Agronomist</span>
               </div>
               <div className="flex items-center space-x-2">
                 <Calendar className="w-4 h-4 text-emerald-600" />
@@ -90,52 +92,7 @@ export default function BlogDetail({ post, onSelectPost, onViewAll }: BlogDetail
               {post.excerpt}
             </p>
 
-            <p>
-              Successful agriculture depends heavily on precision. Over the last 15 years, farming parameters across Kenyan highlands (such as Nakuru, Kericho, and Eldoret) have adjusted significantly due to weather variations. In order to maximize maize crops or vegetable yields, growers must analyze their soil chemistry and adopt scientific, proven guidelines.
-            </p>
-
-            <p>
-              At Maxim Vet, our cooperative training and soil laboratory service have mapped nutrient variations on over 2,500 smallholder farms. The data points to a single recurring error: the timing of basal application versus top-dressing. Feeding crops correctly at specific root development stages increases harvest weight by up to 45%.
-            </p>
-
-            {/* Sub-heading & Detailed Sections */}
-            <div className="space-y-4">
-              <h3 className="font-serif text-xl md:text-2xl font-semibold text-emerald-950 pt-4 flex items-center space-x-2">
-                <Sparkles className="w-5 h-5 text-emerald-600" />
-                <span>Key Agronomy &amp; Crop Management Rules</span>
-              </h3>
-              <p>
-                Whether you are managing large community acres or a backyard greenhouse, applying the following certified standards will keep your soil active and chemical costs balanced:
-              </p>
-
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6 pt-4">
-                <div className="p-5 bg-emerald-50 rounded-2xl border border-emerald-900/5">
-                  <span className="font-black text-lg text-emerald-800 block mb-2">01</span>
-                  <h4 className="font-bold text-xs uppercase tracking-wider text-emerald-950 mb-2">Soil Testing First</h4>
-                  <p className="text-xs text-emerald-900/80 leading-relaxed">
-                    Never apply basal chemical compounds blindly. A simple pH analysis in early spring guarantees proper fertilizer absorption.
-                  </p>
-                </div>
-                <div className="p-5 bg-emerald-50 rounded-2xl border border-emerald-900/5">
-                  <span className="font-black text-lg text-emerald-800 block mb-2">02</span>
-                  <h4 className="font-bold text-xs uppercase tracking-wider text-emerald-950 mb-2">NPK Vigor</h4>
-                  <p className="text-xs text-emerald-900/80 leading-relaxed">
-                    Basal compounds like NPK 17:17:17 are strictly for planting bedding. Late application is ineffective as Nitrogen vaporizes.
-                  </p>
-                </div>
-                <div className="p-5 bg-emerald-50 rounded-2xl border border-emerald-900/5">
-                  <span className="font-black text-lg text-emerald-800 block mb-2">03</span>
-                  <h4 className="font-bold text-xs uppercase tracking-wider text-emerald-950 mb-2">Precise Spraying</h4>
-                  <p className="text-xs text-emerald-900/80 leading-relaxed">
-                    Spray selective pesticides like Duduthrin only during early morning or late evening to protect beneficial bees.
-                  </p>
-                </div>
-              </div>
-            </div>
-
-            <p>
-              In addition, farmers should maintain accurate crop records. Documenting exact planting dates, rain onset periods, and chemical application quantities helps identify yield bottlenecks. Over-application of chemicals can lead to soil acidification, turning productive fields sterile over multiple cycles.
-            </p>
+            <ArticleContent content={post.content} className="space-y-6 md:space-y-8" />
 
             {/* Callout Info Box */}
             <div className="p-6 bg-emerald-950 text-emerald-100 rounded-3xl border border-emerald-500/10 shadow-inner space-y-3 relative overflow-hidden">

@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, ChangeEvent } from 'react';
 import { Play, Pause, RotateCcw, Loader2 } from 'lucide-react';
 
 interface LessonVideoPlayerProps {
@@ -165,7 +165,7 @@ export default function LessonVideoPlayer({ video, storageKey, onEnded }: Lesson
     localStorage.setItem(storageKey, '0');
   };
 
-  const onSeek = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const onSeek = (e: ChangeEvent<HTMLInputElement>) => {
     const p = playerRef.current;
     const t = Number(e.target.value);
     setCurrent(t);

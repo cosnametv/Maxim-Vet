@@ -1,6 +1,7 @@
 import React, { useState, useEffect, FormEvent } from 'react';
 import { Product, CartItem } from './types';
-import { BLOGS } from './data';
+import { useContent } from './store/contentStore';
+import AdminPortal from './components/AdminPortal';
 import HeroSlider from './components/HeroSlider';
 import ProductCatalog from './components/ProductCatalog';
 import CartDrawer from './components/CartDrawer';
@@ -26,17 +27,19 @@ const slugify = (text: string) =>
     .replace(/^-+|-+$/g, '');
 
 export default function App() {
+  const { blogs: BLOGS } = useContent();
   const [cartItems, setCartItems] = useState<CartItem[]>([]);
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  const [isGetInTouchActive, setIsGetInTouchActive] = useState(false);
   const [getInTouchTab, setGetInTouchTab] = useState<'inquiry' | 'support'>('inquiry');
   const [getInTouchService, setGetInTouchService] = useState<'vet' | 'soil' | 'agronomy' | 'delivery'>('vet');
   
   // Path Router State
   const [currentPath, setCurrentPath] = useState(window.location.pathname);
   const [isAcademyDropdownOpen, setIsAcademyDropdownOpen] = useState(false);
-  const isAcademyRoute = currentPath === '/vets' || currentPath === '/farmers';
+  const isAdminRoute = currentPath.startsWith('/maxim/admin');
+  const isContactsRoute = currentPath === '/contacts';
+  const isAcademyRoute = currentPath === '/vets' || currentPath === '/farmers' || isAdminRoute;
 
   // Derive the active blog post from the URL, e.g. /blog/<slug>
   const blogSlug = currentPath.startsWith('/blog/')
@@ -62,15 +65,6 @@ export default function App() {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
-  // Return to the home route (used when opening overlays like Get In Touch
-  // from a blog/listing route so the correct view renders).
-  const resetToHomeBase = () => {
-    if (window.location.pathname !== '/') {
-      window.history.pushState(null, '', '/');
-      setCurrentPath('/');
-    }
-  };
-  
   // Newsletter state
   const [newsletterEmail, setNewsletterEmail] = useState('');
   const [newsletterSubscribed, setNewsletterSubscribed] = useState(false);
@@ -155,9 +149,12 @@ export default function App() {
   const handleOpenBooking = (service: 'vet' | 'soil' | 'agronomy' | 'delivery') => {
     setGetInTouchTab('support');
     setGetInTouchService(service);
-    setIsGetInTouchActive(true);
-    resetToHomeBase();
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+    navigate('/contacts');
+  };
+
+  const openContacts = (tab: 'inquiry' | 'support' = 'inquiry') => {
+    setGetInTouchTab(tab);
+    navigate('/contacts');
   };
 
   const handleNewsletterSubmit = (e: FormEvent) => {
@@ -169,9 +166,8 @@ export default function App() {
   };
 
   const handleNavLinkClick = (e: React.MouseEvent<HTMLAnchorElement>, targetId: string) => {
-    if (selectedBlogPost || isGetInTouchActive || currentPath !== '/') {
+    if (selectedBlogPost || currentPath !== '/') {
       e.preventDefault();
-      setIsGetInTouchActive(false);
       if (currentPath !== '/') {
         window.history.pushState(null, '', '/');
         setCurrentPath('/');
@@ -188,9 +184,8 @@ export default function App() {
   };
 
   const handleLogoClick = (e: React.MouseEvent<HTMLAnchorElement>) => {
-    if (selectedBlogPost || isGetInTouchActive || currentPath !== '/') {
+    if (selectedBlogPost || currentPath !== '/') {
       e.preventDefault();
-      setIsGetInTouchActive(false);
       if (currentPath !== '/') {
         navigate('/');
       } else {
@@ -251,12 +246,57 @@ export default function App() {
             <a href="#about-us-section" onClick={(e) => handleNavLinkClick(e, 'about-us-section')} className="px-4 py-2 rounded-full text-xs font-bold text-emerald-950 hover:bg-emerald-50 hover:text-emerald-700 transition">
               About Us
             </a>
-            <a href="#products-catalog-section" onClick={(e) => handleNavLinkClick(e, 'products-catalog-section')} className="px-4 py-2 rounded-full text-xs font-bold text-emerald-950 hover:bg-emerald-50 hover:text-emerald-700 transition">
-              Certified Catalog
-            </a>
-            <a href="#services-highlights-section" onClick={(e) => handleNavLinkClick(e, 'services-highlights-section')} className="px-4 py-2 rounded-full text-xs font-bold text-emerald-950 hover:bg-emerald-50 hover:text-emerald-700 transition">
-              Farming Services
-            </a>
+            {/* Certified Catalog dropdown */}
+            <div className="relative group py-2">
+              <a
+                href="#products-catalog-section"
+                onClick={(e) => handleNavLinkClick(e, 'products-catalog-section')}
+                className="flex items-center space-x-1 px-4 py-2 rounded-full text-xs font-bold text-emerald-950 hover:bg-emerald-50 hover:text-emerald-700 transition cursor-pointer"
+              >
+                <span>Certified Catalog</span>
+                <ChevronDown className="w-3.5 h-3.5 text-emerald-950/70 transition-transform group-hover:rotate-180" />
+              </a>
+              <div className="absolute top-full left-0 mt-1 w-52 bg-white border border-emerald-900/10 rounded-2xl shadow-xl py-2 z-50 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200">
+                {['Crop Protection', 'Biological Fungicides', 'Dairy Cow Boosters', 'Field Spray Pumps', 'High-Yield Seeds'].map((label) => (
+                  <a
+                    key={label}
+                    href="#products-catalog-section"
+                    onClick={(e) => handleNavLinkClick(e, 'products-catalog-section')}
+                    className="block px-4 py-2.5 text-xs font-bold text-emerald-950 hover:bg-emerald-50 hover:text-emerald-700 transition"
+                  >
+                    {label}
+                  </a>
+                ))}
+              </div>
+            </div>
+
+            {/* Farming Services dropdown */}
+            <div className="relative group py-2">
+              <a
+                href="#services-highlights-section"
+                onClick={(e) => handleNavLinkClick(e, 'services-highlights-section')}
+                className="flex items-center space-x-1 px-4 py-2 rounded-full text-xs font-bold text-emerald-950 hover:bg-emerald-50 hover:text-emerald-700 transition cursor-pointer"
+              >
+                <span>Farming Services</span>
+                <ChevronDown className="w-3.5 h-3.5 text-emerald-950/70 transition-transform group-hover:rotate-180" />
+              </a>
+              <div className="absolute top-full left-0 mt-1 w-52 bg-white border border-emerald-900/10 rounded-2xl shadow-xl py-2 z-50 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200">
+                {([
+                  { label: 'Veterinary Booking', key: 'vet' },
+                  { label: 'Soil Lab Sampling', key: 'soil' },
+                  { label: 'Agronomy Guidance', key: 'agronomy' },
+                  { label: 'Cooperative Dispatch', key: 'delivery' },
+                ] as const).map((s) => (
+                  <button
+                    key={s.key}
+                    onClick={() => handleOpenBooking(s.key)}
+                    className="block w-full text-left px-4 py-2.5 text-xs font-bold text-emerald-950 hover:bg-emerald-50 hover:text-emerald-700 transition cursor-pointer"
+                  >
+                    {s.label}
+                  </button>
+                ))}
+              </div>
+            </div>
             <div 
               className="relative group py-2"
               onMouseEnter={() => setIsAcademyDropdownOpen(true)}
@@ -315,12 +355,7 @@ export default function App() {
             </div>
             <button 
               id="nav-get-in-touch-btn"
-              onClick={() => {
-                setIsGetInTouchActive(true);
-                setGetInTouchTab('inquiry');
-                resetToHomeBase();
-                window.scrollTo({ top: 0, behavior: 'smooth' });
-              }} 
+              onClick={() => openContacts('inquiry')} 
               className="ml-2 inline-flex items-center px-5 py-2.5 rounded-full text-xs font-bold text-white bg-gradient-to-r from-emerald-600 to-emerald-500 hover:from-emerald-500 hover:to-emerald-400 shadow-md shadow-emerald-600/25 transition transform hover:-translate-y-0.5 cursor-pointer"
             >
               Get In Touch
@@ -364,7 +399,6 @@ export default function App() {
                 { label: 'Home', href: '#hero-slider-container' },
                 { label: 'About Us', href: '#about-us-section' },
                 { label: 'Certified Catalog', href: '#products-catalog-section' },
-                { label: 'Farming Services', href: '#services-highlights-section' },
               ].map((link) => (
                 <a
                   key={link.label}
@@ -378,6 +412,52 @@ export default function App() {
                   {link.label}
                 </a>
               ))}
+
+              {/* Catalog Ranges Mobile Submenu */}
+              <div className="border-t border-emerald-900/5 pt-2 mt-2">
+                <span className="px-4 text-[10px] font-bold uppercase tracking-wider text-emerald-600 block mb-1">
+                  Catalog Ranges
+                </span>
+                {['Crop Protection', 'Biological Fungicides', 'Dairy Cow Boosters', 'Field Spray Pumps', 'High-Yield Seeds'].map((label) => (
+                  <a
+                    key={label}
+                    href="#products-catalog-section"
+                    onClick={(e) => {
+                      setIsMobileMenuOpen(false);
+                      handleNavLinkClick(e, 'products-catalog-section');
+                    }}
+                    className="flex items-center justify-between px-4 py-2.5 rounded-xl text-xs font-bold text-emerald-950 hover:bg-emerald-50 hover:text-emerald-700 transition"
+                  >
+                    <span>{label}</span>
+                    <ChevronRight className="w-3.5 h-3.5 text-emerald-600" />
+                  </a>
+                ))}
+              </div>
+
+              {/* Farming Services Mobile Submenu */}
+              <div className="border-t border-emerald-900/5 pt-2 mt-2">
+                <span className="px-4 text-[10px] font-bold uppercase tracking-wider text-emerald-600 block mb-1">
+                  Farming Services
+                </span>
+                {([
+                  { label: 'Veterinary Booking', key: 'vet' },
+                  { label: 'Soil Lab Sampling', key: 'soil' },
+                  { label: 'Agronomy Guidance', key: 'agronomy' },
+                  { label: 'Cooperative Dispatch', key: 'delivery' },
+                ] as const).map((s) => (
+                  <button
+                    key={s.key}
+                    onClick={() => {
+                      setIsMobileMenuOpen(false);
+                      handleOpenBooking(s.key);
+                    }}
+                    className="flex items-center justify-between w-full text-left px-4 py-2.5 rounded-xl text-xs font-bold text-emerald-950 hover:bg-emerald-50 hover:text-emerald-700 transition"
+                  >
+                    <span>{s.label}</span>
+                    <ChevronRight className="w-3.5 h-3.5 text-emerald-600" />
+                  </button>
+                ))}
+              </div>
 
               {/* Academy Mobile Submenu */}
               <div className="border-t border-emerald-900/5 pt-2 mt-2">
@@ -424,10 +504,7 @@ export default function App() {
                 <button
                   onClick={() => {
                     setIsMobileMenuOpen(false);
-                    setIsGetInTouchActive(true);
-                    setGetInTouchTab('inquiry');
-                    resetToHomeBase();
-                    window.scrollTo({ top: 0, behavior: 'smooth' });
+                    openContacts('inquiry');
                   }}
                   className="w-full text-center px-4 py-3 rounded-xl text-xs font-bold text-white bg-gradient-to-r from-emerald-600 to-emerald-500 hover:from-emerald-500 hover:to-emerald-400 shadow-md shadow-emerald-600/25 transition cursor-pointer"
                 >
@@ -441,7 +518,9 @@ export default function App() {
         </>
       )}
 
-      {currentPath === '/vets' ? (
+      {isAdminRoute ? (
+        <AdminPortal onBack={() => navigate('/')} />
+      ) : currentPath === '/vets' ? (
         <VetAcademyPortal onBack={() => navigate('/')} />
       ) : currentPath === '/farmers' ? (
         <FarmersAcademyPortal 
@@ -465,14 +544,11 @@ export default function App() {
           variant="page"
           onSelectArticle={(blog) => openBlogPost(blog)}
         />
-      ) : isGetInTouchActive ? (
+      ) : isContactsRoute ? (
         <GetInTouchPage 
           initialTab={getInTouchTab}
           initialService={getInTouchService}
-          onBack={() => {
-            setIsGetInTouchActive(false);
-            window.scrollTo({ top: 0, behavior: 'smooth' });
-          }}
+          onBack={() => navigate('/')}
         />
       ) : (
         <>
@@ -710,19 +786,13 @@ export default function App() {
                       </span>
                       <span className="text-[10px] md:text-xs text-emerald-800 font-bold mt-1 block">Counties Covered</span>
                     </div>
-                    <span className="text-2xl">🇰🇪</span>
                   </div>
                 </div>
               </div>
 
               <div className="pt-2">
                 <button
-                  onClick={() => {
-                    setIsGetInTouchActive(true);
-                    setGetInTouchTab('inquiry');
-                    resetToHomeBase();
-                    window.scrollTo({ top: 0, behavior: 'smooth' });
-                  }}
+                  onClick={() => openContacts('inquiry')}
                   className="btn bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs px-8 py-3.5 rounded-full shadow-md transition transform hover:-translate-y-0.5 cursor-pointer"
                 >
                   Write to Company Directors
@@ -813,17 +883,12 @@ export default function App() {
       </section>
 
       {/* 10. FAQS EXPANDABLE ACCORDIONS */}
-      <FAQSection onWriteToExpert={() => {
-        setIsGetInTouchActive(true);
-        setGetInTouchTab('inquiry');
-        resetToHomeBase();
-        window.scrollTo({ top: 0, behavior: 'smooth' });
-      }} />
+      <FAQSection onWriteToExpert={() => openContacts('inquiry')} />
 
       {/* 11. BLOG COMPONENT */}
       <BlogSection onSelectArticle={(blog) => openBlogPost(blog)} onViewAll={() => navigate('/blogs')} />
 
-      {/* 12. BRANDS & PARTNERS MARQUEE */}
+      {/* 13. BRANDS & PARTNERS MARQUEE */}
       <section id="partners-marquee-section" className="py-16 bg-white overflow-hidden">
         <div className="container mx-auto px-6 text-center space-y-8">
           <span className="text-[10px] font-bold uppercase tracking-widest text-emerald-600 block">
@@ -869,58 +934,6 @@ export default function App() {
         </div>
       </section>
 
-      {/* 13. INTERACTIVE NEWSLETTER CARD */}
-      <section id="newsletter-signup-block" className="py-8 bg-emerald-50">
-        <div className="container mx-auto px-6">
-          <div className="bg-gradient-to-br from-emerald-950 to-emerald-900 rounded-[40px] p-8 md:p-16 relative overflow-hidden text-white flex flex-col lg:flex-row items-center justify-between gap-12 border border-white/5 shadow-xl">
-            <div className="absolute top-0 right-0 w-80 h-80 bg-radial-gradient from-emerald-500/10 to-transparent pointer-events-none rounded-full" />
-            
-            <div className="space-y-4 max-w-xl text-left relative z-10">
-              <h3 className="font-serif text-2xl md:text-4xl font-medium leading-tight">
-                Stay Updated with Agricultural Cycles
-              </h3>
-              <p className="text-emerald-100/80 text-xs md:text-sm">
-                Receive certified planting advisories, pest outbreak forecasts, and early-bird discount codes directly on your phone/email. No spam, ever.
-              </p>
-            </div>
-
-            <div className="w-full lg:max-w-md relative z-10">
-              {!newsletterSubscribed ? (
-                <form onSubmit={handleNewsletterSubmit} className="flex flex-col sm:flex-row gap-3">
-                  <input
-                    id="newsletter-email-input"
-                    type="email"
-                    required
-                    placeholder="Enter your email address"
-                    value={newsletterEmail}
-                    onChange={(e) => setNewsletterEmail(e.target.value)}
-                    className="flex-1 px-5 py-4 rounded-full bg-white/10 border border-white/20 text-xs md:text-sm text-white placeholder-white/40 focus:bg-white/20 focus:border-emerald-400 outline-none transition"
-                  />
-                  <button
-                    id="newsletter-submit-btn"
-                    type="submit"
-                    className="px-8 py-4 bg-white hover:bg-emerald-50 text-emerald-950 font-bold text-xs rounded-full shadow-md transition duration-200 shrink-0"
-                  >
-                    Subscribe Now
-                  </button>
-                </form>
-              ) : (
-                <div className="p-5 bg-white/10 border border-emerald-500/30 rounded-3xl text-left space-y-2 flex items-start space-x-3">
-                  <CheckCircle className="w-5 h-5 text-emerald-400 shrink-0 mt-0.5" />
-                  <div>
-                    <h5 className="text-sm font-bold text-emerald-300">Asante! Subscription Confirmed</h5>
-                    <p className="text-xs text-emerald-100/90 leading-relaxed">
-                      You are successfully registered. We will send you certified agrochemical guides before the next rain cycle.
-                    </p>
-                  </div>
-                </div>
-              )}
-            </div>
-
-          </div>
-        </div>
-      </section>
-
 
         </>
       )}
@@ -957,31 +970,49 @@ export default function App() {
                 </div>
               </div>
 
-              {/* Links Column 1 */}
-              <div className="col-span-1 md:col-span-3 space-y-4 text-left">
-                <h5 className="text-xs font-bold uppercase tracking-wider text-emerald-300 border-b border-emerald-900 pb-2 sm:border-0 sm:pb-0">Catalog Ranges</h5>
-                <ul className="space-y-2.5 text-xs text-emerald-200/80">
-                  <li><a href="#products-catalog-section" className="hover:text-white hover:underline decoration-emerald-500 underline-offset-4 transition">Crop Protection</a></li>
-                  <li><a href="#products-catalog-section" className="hover:text-white hover:underline decoration-emerald-500 underline-offset-4 transition">Biological Fungicides</a></li>
-                  <li><a href="#products-catalog-section" className="hover:text-white hover:underline decoration-emerald-500 underline-offset-4 transition">Dairy Cow Boosters</a></li>
-                  <li><a href="#products-catalog-section" className="hover:text-white hover:underline decoration-emerald-500 underline-offset-4 transition">Field Spray Pumps</a></li>
-                  <li><a href="#products-catalog-section" className="hover:text-white hover:underline decoration-emerald-500 underline-offset-4 transition">High-Yield Seeds</a></li>
-                </ul>
-              </div>
-
-              {/* Links Column 2 */}
-              <div className="col-span-1 md:col-span-3 space-y-4 text-left">
-                <h5 className="text-xs font-bold uppercase tracking-wider text-emerald-300 border-b border-emerald-900 pb-2 sm:border-0 sm:pb-0">Farming Services</h5>
-                <ul className="space-y-2.5 text-xs text-emerald-200/80">
-                  <li><button id="f-link-vet" onClick={() => handleOpenBooking('vet')} className="hover:text-white hover:underline decoration-emerald-500 underline-offset-4 transition text-left cursor-pointer">Veterinary Booking</button></li>
-                  <li><button id="f-link-soil" onClick={() => handleOpenBooking('soil')} className="hover:text-white hover:underline decoration-emerald-500 underline-offset-4 transition text-left cursor-pointer">Soil Lab Sampling</button></li>
-                  <li><button id="f-link-agronomy" onClick={() => handleOpenBooking('agronomy')} className="hover:text-white hover:underline decoration-emerald-500 underline-offset-4 transition text-left cursor-pointer">Agronomy Guidance</button></li>
-                  <li><button id="f-link-delivery" onClick={() => handleOpenBooking('delivery')} className="hover:text-white hover:underline decoration-emerald-500 underline-offset-4 transition text-left cursor-pointer">Cooperative Dispatch</button></li>
-                </ul>
+              {/* Newsletter sign-up */}
+              <div id="newsletter-signup-block" className="col-span-2 md:col-span-4 space-y-4 text-left">
+                <h5 className="text-xs font-bold uppercase tracking-wider text-emerald-300 border-b border-emerald-900 pb-2 sm:border-0 sm:pb-0">Newsletter</h5>
+                <h3 className="font-serif text-xl md:text-2xl font-medium leading-tight text-white">
+                  Stay Updated with Agricultural Cycles
+                </h3>
+                <p className="text-xs text-emerald-100/70 leading-relaxed">
+                  Receive certified planting advisories, pest outbreak forecasts, and early-bird discount codes directly on your email. No spam, ever.
+                </p>
+                {!newsletterSubscribed ? (
+                  <form onSubmit={handleNewsletterSubmit} className="flex flex-col gap-3 pt-1">
+                    <input
+                      id="newsletter-email-input"
+                      type="email"
+                      required
+                      placeholder="Enter your email address"
+                      value={newsletterEmail}
+                      onChange={(e) => setNewsletterEmail(e.target.value)}
+                      className="w-full px-5 py-3.5 rounded-full bg-white/10 border border-white/20 text-xs md:text-sm text-white placeholder-white/40 focus:bg-white/20 focus:border-emerald-400 outline-none transition"
+                    />
+                    <button
+                      id="newsletter-submit-btn"
+                      type="submit"
+                      className="px-8 py-3.5 bg-white hover:bg-emerald-50 text-emerald-950 font-bold text-xs rounded-full shadow-md transition duration-200"
+                    >
+                      Subscribe Now
+                    </button>
+                  </form>
+                ) : (
+                  <div className="p-5 bg-white/10 border border-emerald-500/30 rounded-3xl text-left space-y-2 flex items-start space-x-3">
+                    <CheckCircle className="w-5 h-5 text-emerald-400 shrink-0 mt-0.5" />
+                    <div>
+                      <h5 className="text-sm font-bold text-emerald-300">Asante! Subscription Confirmed</h5>
+                      <p className="text-xs text-emerald-100/90 leading-relaxed">
+                        You are successfully registered. We will send you certified agrochemical guides before the next rain cycle.
+                      </p>
+                    </div>
+                  </div>
+                )}
               </div>
 
               {/* Contact details */}
-              <div className="col-span-2 md:col-span-2 space-y-4 text-left text-xs">
+              <div className="col-span-2 md:col-span-4 space-y-4 text-left text-xs">
                 <h5 className="text-xs font-bold uppercase tracking-wider text-emerald-300 border-b border-emerald-900 pb-2 sm:border-0 sm:pb-0">Nairobi Headquarters</h5>
                 <div className="space-y-3 text-emerald-200/80">
                   <p className="leading-relaxed">

@@ -1,4 +1,4 @@
-import React, { useState, FormEvent } from 'react';
+import React, { useState, useEffect, FormEvent } from 'react';
 import { 
   Mail, Phone, MapPin, Calendar, MessageSquare, 
   CheckCircle2, Clock, Send, Shield, User, Building, Info 
@@ -24,6 +24,12 @@ export default function GetInTouchPage({ onBack, initialTab = 'inquiry', initial
   const [date, setDate] = useState('');
   const [location, setLocation] = useState('');
 
+  // Keep the form in sync when opened with a different tab/service selection.
+  useEffect(() => {
+    setActiveTab(initialTab);
+    setServiceType(initialService);
+  }, [initialTab, initialService]);
+
   // Status States
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitSuccess, setSubmitSuccess] = useState(false);
@@ -40,6 +46,10 @@ export default function GetInTouchPage({ onBack, initialTab = 'inquiry', initial
     }
     if (!phone.trim() || phone.length < 9) {
       setErrorMsg('Please enter a valid phone number.');
+      return;
+    }
+    if (!email.trim() || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) {
+      setErrorMsg('Please enter a valid email address.');
       return;
     }
 
@@ -248,50 +258,47 @@ export default function GetInTouchPage({ onBack, initialTab = 'inquiry', initial
                     </div>
                   </div>
 
-                  <div className="space-y-1">
-                    <label className="block text-xs font-bold text-emerald-950">Email Address (Optional)</label>
-                    <div className="relative">
-                      <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-emerald-600" />
-                      <input
-                        id="touch-email"
-                        type="email"
-                        placeholder="e.g., name@example.com"
-                        value={email}
-                        onChange={(e) => setEmail(e.target.value)}
-                        className="w-full pl-11 pr-4 py-3 rounded-xl border border-emerald-900/15 text-xs focus:border-emerald-600 outline-none"
-                      />
+                  <div className={`grid grid-cols-1 gap-4 ${activeTab === 'support' ? 'sm:grid-cols-2' : ''}`}>
+                    <div className="space-y-1">
+                      <label className="block text-xs font-bold text-emerald-950">Email Address *</label>
+                      <div className="relative">
+                        <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-emerald-600" />
+                        <input
+                          id="touch-email"
+                          type="email"
+                          required
+                          placeholder="e.g., name@example.com"
+                          value={email}
+                          onChange={(e) => setEmail(e.target.value)}
+                          className="w-full pl-11 pr-4 py-3 rounded-xl border border-emerald-900/15 text-xs focus:border-emerald-600 outline-none"
+                        />
+                      </div>
                     </div>
+
+                    {activeTab === 'support' && (
+                      <div className="space-y-1">
+                        <label className="block text-xs font-bold text-emerald-950">Required Support Expert *</label>
+                        <div className="relative">
+                          <Shield className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-emerald-600 pointer-events-none" />
+                          <select
+                            id="touch-service"
+                            value={serviceType}
+                            onChange={(e) => setServiceType(e.target.value as 'vet' | 'soil' | 'agronomy' | 'delivery')}
+                            className="w-full pl-11 pr-4 py-3 rounded-xl border border-emerald-900/15 text-xs focus:border-emerald-600 outline-none bg-white appearance-none"
+                          >
+                            <option value="vet">KVB Veterinary Doctor</option>
+                            <option value="soil">Soil Testing Lab Tech</option>
+                            <option value="agronomy">Crop Agronomist</option>
+                            <option value="delivery">Cooperative Dispatch</option>
+                          </select>
+                        </div>
+                      </div>
+                    )}
                   </div>
 
                   {/* Conditional Fields for Support Desk Booking */}
                   {activeTab === 'support' && (
                     <div className="space-y-4 pt-2 border-t border-slate-100">
-                      
-                      <div className="space-y-1">
-                        <label className="block text-xs font-bold text-emerald-950">Required Support Expert *</label>
-                        <div className="grid grid-cols-2 gap-2">
-                          {[
-                            { id: 'vet', label: 'KVB Veterinary Doctor' },
-                            { id: 'soil', label: 'Soil Testing Lab Tech' },
-                            { id: 'agronomy', label: 'Crop Agronomist' },
-                            { id: 'delivery', label: 'Cooperative Dispatch' },
-                          ].map((s) => (
-                            <button
-                              id={`touch-service-${s.id}`}
-                              key={s.id}
-                              type="button"
-                              onClick={() => setServiceType(s.id as any)}
-                              className={`py-2.5 px-3 rounded-xl text-[11px] font-bold transition border ${
-                                serviceType === s.id
-                                  ? 'bg-emerald-600 text-white border-emerald-600'
-                                  : 'bg-emerald-50/50 hover:bg-emerald-50 border-emerald-900/5 text-emerald-900'
-                              }`}
-                            >
-                              {s.label}
-                            </button>
-                          ))}
-                        </div>
-                      </div>
 
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         <div className="space-y-1">

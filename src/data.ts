@@ -1,4 +1,4 @@
-import { Product, BlogPost, FAQItem } from './types';
+import { Product, BlogPost, FAQItem, CPDModule, Workshop } from './types';
 
 // All 47 counties of Kenya
 export const KENYA_COUNTIES = [
@@ -198,6 +198,11 @@ export const BLOGS: BlogPost[] = [
     readTime: '5 min read',
     category: 'Agronomy Guides',
     image: 'https://images.unsplash.com/photo-1530595467537-0b5996c41f2d?w=600&auto=format&fit=crop&q=80',
+    content:
+      'Maize is one of Kenya\u2019s most important staple crops, but yields are often limited by poor nutrient timing rather than poor soil. Understanding how NPK fertilizers work at each growth stage is the first step to a heavier harvest.\n\n' +
+      'At planting, apply a balanced basal fertilizer such as NPK 17:17:17 directly into the planting hole and mix it lightly with soil before dropping the seed. This gives young roots immediate access to phosphorus for strong establishment.\n\n' +
+      'Around three to four weeks after germination, top-dress with CAN (Calcium Ammonium Nitrate) to supply the nitrogen the crop needs during rapid vegetative growth. A second top-dressing just before tasseling helps the plant fill out cobs fully.\n\n' +
+      'Always base your rates on a recent soil test. Over-application wastes money and acidifies the soil over time, while under-application leaves yield on the table.',
   },
   {
     id: 'blog-2',
@@ -207,6 +212,11 @@ export const BLOGS: BlogPost[] = [
     readTime: '4 min read',
     category: 'Pest Control',
     image: 'https://images.unsplash.com/photo-1595974482597-4b8da8879bc5?w=600&auto=format&fit=crop&q=80',
+    content:
+      'The fall armyworm has become one of the most destructive pests in East African maize fields. An untreated outbreak can devastate an entire acre within days, so early detection is critical.\n\n' +
+      'Scout your fields regularly. Look for window-pane damage on young leaves, moist sawdust-like droppings (frass) in the leaf funnel, and the worms themselves hiding deep in the whorl during the day.\n\n' +
+      'Once confirmed, treat immediately. Apply a recommended insecticide such as Duduthrin directly into the funnel in the early morning or late evening when larvae are most active. Rotate chemical classes between sprays to slow resistance.\n\n' +
+      'Combine spraying with good field hygiene \u2014 destroy crop residues after harvest and avoid staggered planting, which gives the pest a continuous food supply.',
   },
   {
     id: 'blog-3',
@@ -216,6 +226,11 @@ export const BLOGS: BlogPost[] = [
     readTime: '7 min read',
     category: 'Animal Health',
     image: 'https://images.unsplash.com/photo-1570042225831-d98fa7577f1e?w=600&auto=format&fit=crop&q=80',
+    content:
+      'A well-planned vaccination schedule is the cheapest insurance a smallholder farmer can buy. Most devastating livestock losses come from preventable diseases that a timely vaccine would have stopped.\n\n' +
+      'For dairy cattle, prioritise Foot and Mouth Disease, Lumpy Skin Disease, and Anthrax/Blackquarter vaccinations, repeating them according to your veterinarian\u2019s seasonal calendar.\n\n' +
+      'For goats and sheep, ensure protection against PPR (goat plague) and Contagious Caprine Pleuropneumonia, which spread rapidly in mixed flocks.\n\n' +
+      'Vaccines are fragile. Keep them in a cool box at 2\u20138\u00b0C from the agrovet to the farm, and use them within the day they are opened. Always record the date, batch number, and animal treated so booster timing is never missed.',
   }
 ];
 
@@ -236,4 +251,72 @@ export const FAQS: FAQItem[] = [
     question: 'Do you offer bulk purchase discounts for large farms or agrovets?',
     answer: 'Yes. We offer wholesale prices and tiered bulk discounts for cooperative societies, community farming groups, and local agrovet retail merchants. Contact our sales department directly using the form below.',
   },
+];
+
+// Vet Academy CPD modules (admin-manageable)
+export const DEFAULT_CPD_MODULES: CPDModule[] = [
+  {
+    id: 'cpd-1',
+    title: 'Advanced Ruminant Mastitis Management',
+    code: 'KVB-CPD-2026-08',
+    ratePerDay: 500,
+    duration: '3 hours',
+    fromDate: '14 July 2026',
+    toDate: '16 July 2026',
+    difficulty: 'Intermediate',
+    description: 'Reviewing clinical vs sub-clinical mastitis detection protocols using CMT kits, hygienic milking pathways, and targeted intramammary antibiotic infusions.'
+  },
+  {
+    id: 'cpd-2',
+    title: 'Acaricide Resistance and Vector Control Protocols',
+    code: 'KVB-CPD-2026-11',
+    ratePerDay: 600,
+    duration: '4 hours',
+    fromDate: '21 July 2026',
+    toDate: '24 July 2026',
+    difficulty: 'Advanced',
+    description: 'Empirical approaches to managing tick resistance in East Africa, rotation of organophosphates vs pyrethroids, and community spray schedule setups.'
+  },
+  {
+    id: 'cpd-3',
+    title: 'Vaccine Cold-Chain Maintenance in Semi-Arid Counties',
+    code: 'KVB-CPD-2026-02',
+    ratePerDay: 400,
+    duration: '2 hours',
+    fromDate: '4 August 2026',
+    toDate: '5 August 2026',
+    difficulty: 'Foundational',
+    description: 'Practical training on keeping Contagious Bovine Pleuropneumonia (CBPP) and Lumpy Skin Disease (LSD) vaccines stable at 2-8°C during field distribution.'
+  }
+];
+
+// Farmers Academy field workshops (admin-manageable)
+export const DEFAULT_WORKSHOPS: Workshop[] = [
+  {
+    id: 'ws-1',
+    title: 'Maximizing Maize Yield with Certified NPK and Selective Boosters',
+    county: 'Nakuru County',
+    venue: 'Nakuru Town Agricultural Hall',
+    date: 'July 05, 2026',
+    time: '9:00 AM - 1:00 PM',
+    agronomist: 'Dr. Julius Rotich, Senior Crop Protection Lead'
+  },
+  {
+    id: 'ws-2',
+    title: 'Clinical Tick Control & Vaccine Calendars for Smallholder Dairy Cows',
+    county: 'Kiambu County',
+    venue: 'Githunguri Cooperative Grounds',
+    date: 'July 12, 2026',
+    time: '10:00 AM - 3:00 PM',
+    agronomist: 'Dr. Evelyn Wanjiku, Licensed Vet Practitioner'
+  },
+  {
+    id: 'ws-3',
+    title: 'Eco-Friendly Biological Soil Fungicides & Seed Treatment Pathways',
+    county: 'Nairobi County',
+    venue: 'Industrial Area Training Hub',
+    date: 'July 18, 2026',
+    time: '2:00 PM - 5:00 PM',
+    agronomist: 'Agnes Mwelu, Senior Agronomist'
+  }
 ];

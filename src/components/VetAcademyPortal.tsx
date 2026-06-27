@@ -6,6 +6,8 @@ import {
 import PasswordInput from './PasswordInput';
 import Toast, { ToastData, ToastType } from './Toast';
 import { KENYA_COUNTIES } from '../data';
+import { useContent } from '../store/contentStore';
+import { EnrollmentRecord } from '../types';
 
 interface VetAcademyPortalProps {
   onBack: () => void;
@@ -22,17 +24,8 @@ interface CaseReport {
   date: string;
 }
 
-interface EnrollmentRecord {
-  moduleId: string;
-  dates: string[];
-  amount: number;
-  phone: string;
-  reference: string;
-  submittedAt: string;
-  verified: boolean;
-}
-
 export default function VetAcademyPortal({ onBack }: VetAcademyPortalProps) {
+  const { cpdModules: CPD_MODULES, enrollments, setEnrollments } = useContent();
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [isRegistering, setIsRegistering] = useState(false);
   const [kvbNumber, setKvbNumber] = useState('');
@@ -54,6 +47,7 @@ export default function VetAcademyPortal({ onBack }: VetAcademyPortalProps) {
   const [searchQuery, setSearchQuery] = useState('');
 
   // CPD enrollment / payment
+  // Fallback day rate used only if a module has no rate configured.
   const CPD_FEE_PER_DAY = 500;
   const CPD_PAYBILL = '400200';
   const CPD_ACCOUNT = 'MAXIMVET-CPD';
@@ -61,7 +55,6 @@ export default function VetAcademyPortal({ onBack }: VetAcademyPortalProps) {
   const [selectedDates, setSelectedDates] = useState<string[]>([]);
   const [enrollPhone, setEnrollPhone] = useState('');
   const [mpesaRef, setMpesaRef] = useState('');
-  const [enrollments, setEnrollments] = useState<Record<string, EnrollmentRecord>>({});
   
   // Case Reports States
   const [reports, setReports] = useState<CaseReport[]>([
@@ -199,43 +192,6 @@ export default function VetAcademyPortal({ onBack }: VetAcademyPortalProps) {
     setReports(reports.filter(r => r.id !== id));
   };
 
-  // CPD Modules
-  const CPD_MODULES = [
-    {
-      id: 'cpd-1',
-      title: 'Advanced Ruminant Mastitis Management',
-      code: 'KVB-CPD-2026-08',
-      credits: 4,
-      duration: '3 hours',
-      fromDate: '14 July 2026',
-      toDate: '16 July 2026',
-      difficulty: 'Intermediate',
-      description: 'Reviewing clinical vs sub-clinical mastitis detection protocols using CMT kits, hygienic milking pathways, and targeted intramammary antibiotic infusions.'
-    },
-    {
-      id: 'cpd-2',
-      title: 'Acaricide Resistance and Vector Control Protocols',
-      code: 'KVB-CPD-2026-11',
-      credits: 5,
-      duration: '4 hours',
-      fromDate: '21 July 2026',
-      toDate: '24 July 2026',
-      difficulty: 'Advanced',
-      description: 'Empirical approaches to managing tick resistance in East Africa, rotation of organophosphates vs pyrethroids, and community spray schedule setups.'
-    },
-    {
-      id: 'cpd-3',
-      title: 'Vaccine Cold-Chain Maintenance in Semi-Arid Counties',
-      code: 'KVB-CPD-2026-02',
-      credits: 3,
-      duration: '2 hours',
-      fromDate: '4 August 2026',
-      toDate: '5 August 2026',
-      difficulty: 'Foundational',
-      description: 'Practical training on keeping Contagious Bovine Pleuropneumonia (CBPP) and Lumpy Skin Disease (LSD) vaccines stable at 2-8°C during field distribution.'
-    }
-  ];
-
   const filteredCPD = CPD_MODULES.filter(mod => 
     mod.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
     mod.description.toLowerCase().includes(searchQuery.toLowerCase())
@@ -316,11 +272,13 @@ export default function VetAcademyPortal({ onBack }: VetAcademyPortalProps) {
     const record: EnrollmentRecord = {
       moduleId: enrollModule.id,
       dates: orderedDates,
-      amount: orderedDates.length * CPD_FEE_PER_DAY,
+      amount: orderedDates.length * (enrollModule.ratePerDay ?? CPD_FEE_PER_DAY),
       phone: enrollPhone,
       reference: mpesaRef.trim().toUpperCase(),
       submittedAt: new Date().toLocaleString('en-GB', { dateStyle: 'medium', timeStyle: 'short' }),
       verified: false,
+      memberName: fullName || undefined,
+      kvb: kvbNumber ? kvbNumber.trim().toUpperCase() : undefined,
     };
     setEnrollments((prev) => ({ ...prev, [enrollModule.id]: record }));
     showToast(
@@ -355,7 +313,7 @@ export default function VetAcademyPortal({ onBack }: VetAcademyPortalProps) {
         `DTSTART:${fmt(start)}`,
         `DTEND:${fmt(end)}`,
         `SUMMARY:${esc(mod.title)}`,
-        `DESCRIPTION:${esc(`CPD Module ${mod.code} · ${mod.credits} CPD credits · Payment Ref: ${record.reference}`)}`,
+        `DESCRIPTION:${esc(`CPD Module ${mod.code} · Ksh ${mod.ratePerDay ?? CPD_FEE_PER_DAY}/day · Payment Ref: ${record.reference}`)}`,
         'END:VEVENT',
       ].join('\r\n');
     });
@@ -585,7 +543,7 @@ export default function VetAcademyPortal({ onBack }: VetAcademyPortalProps) {
 
                 <div className="space-y-1.5">
                   <label className="text-xs font-bold text-slate-700 block">
-                    Security Passcode / Password
+                    Enter your password
                   </label>
                   <PasswordInput
                     id="vet-login-pass"
@@ -646,7 +604,7 @@ export default function VetAcademyPortal({ onBack }: VetAcademyPortalProps) {
                       {enrollModule.code}
                     </span>
                     <span className="text-[10px] font-bold text-amber-800 bg-amber-50 px-2.5 py-1 rounded-full">
-                      {enrollModule.credits} CPD Credits
+                      Ksh {enrollModule.ratePerDay ?? CPD_FEE_PER_DAY} / day
                     </span>
                   </div>
                   <h3 className="font-serif text-2xl font-bold text-slate-900 leading-snug">{enrollModule.title}</h3>
@@ -691,7 +649,7 @@ export default function VetAcademyPortal({ onBack }: VetAcademyPortalProps) {
                         <div className="space-y-1.5 text-xs">
                           <div className="flex justify-between gap-3"><span className="text-slate-500">Amount</span><span className="font-bold text-emerald-800">Ksh {activeEnrollment.amount}</span></div>
                           <div className="flex justify-between gap-3"><span className="text-slate-500">Days Booked</span><span className="font-bold text-slate-700">{activeEnrollment.dates.length} day{activeEnrollment.dates.length > 1 ? 's' : ''}</span></div>
-                          <div className="flex justify-between gap-3"><span className="text-slate-500">Rate</span><span className="font-bold text-slate-700">Ksh {CPD_FEE_PER_DAY}/day</span></div>
+                          <div className="flex justify-between gap-3"><span className="text-slate-500">Rate</span><span className="font-bold text-slate-700">Ksh {enrollModule.ratePerDay ?? CPD_FEE_PER_DAY}/day</span></div>
                           <div className="flex justify-between gap-3"><span className="text-slate-500">Paying No.</span><span className="font-mono font-bold text-slate-700">{activeEnrollment.phone || '—'}</span></div>
                           <div className="flex justify-between gap-3"><span className="text-slate-500">M-Pesa Code</span><span className="font-mono font-bold text-slate-700">{activeEnrollment.reference}</span></div>
                           <div className="flex justify-between gap-3"><span className="text-slate-500">Status</span><span className={`font-bold ${activeEnrollment.verified ? 'text-emerald-700' : 'text-amber-700'}`}>{activeEnrollment.verified ? 'Verified' : 'Pending Verification'}</span></div>
@@ -706,7 +664,7 @@ export default function VetAcademyPortal({ onBack }: VetAcademyPortalProps) {
                           <div className="flex justify-between gap-3"><span className="text-slate-500">Module</span><span className="font-mono font-bold text-slate-700 text-right">{enrollModule.code}</span></div>
                           <div className="flex justify-between gap-3"><span className="text-slate-500">Full Range</span><span className="font-bold text-slate-700 text-right">{enrollModule.fromDate} – {enrollModule.toDate}</span></div>
                           <div className="flex justify-between gap-3"><span className="text-slate-500">Session</span><span className="font-bold text-slate-700">{enrollModule.duration} per day</span></div>
-                          <div className="flex justify-between gap-3"><span className="text-slate-500">CPD Credits</span><span className="font-bold text-slate-700">{enrollModule.credits}</span></div>
+                          <div className="flex justify-between gap-3"><span className="text-slate-500">Rate</span><span className="font-bold text-slate-700">Ksh {enrollModule.ratePerDay ?? CPD_FEE_PER_DAY} / day</span></div>
                         </div>
                       </div>
                     </div>
@@ -746,7 +704,7 @@ export default function VetAcademyPortal({ onBack }: VetAcademyPortalProps) {
                     <div className="space-y-2">
                       <label className="text-xs font-bold text-slate-700 block">
                         Select the day(s) you will attend
-                        <span className="font-normal text-slate-500"> · Ksh {CPD_FEE_PER_DAY} per day</span>
+                        <span className="font-normal text-slate-500"> · Ksh {enrollModule.ratePerDay ?? CPD_FEE_PER_DAY} per day</span>
                       </label>
                       <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
                         {getModuleDates(enrollModule).map((d) => {
@@ -781,11 +739,11 @@ export default function VetAcademyPortal({ onBack }: VetAcademyPortalProps) {
                       <div>
                         <p className="text-[10px] uppercase font-bold tracking-wider text-emerald-800">Amount to Pay</p>
                         <p className="text-xs text-slate-600">
-                          {selectedDates.length} day{selectedDates.length !== 1 ? 's' : ''} × Ksh {CPD_FEE_PER_DAY}
+                          {selectedDates.length} day{selectedDates.length !== 1 ? 's' : ''} × Ksh {enrollModule.ratePerDay ?? CPD_FEE_PER_DAY}
                         </p>
                       </div>
                       <span className="font-serif text-2xl font-black text-emerald-950">
-                        Ksh {selectedDates.length * CPD_FEE_PER_DAY}
+                        Ksh {selectedDates.length * (enrollModule.ratePerDay ?? CPD_FEE_PER_DAY)}
                       </span>
                     </div>
 
@@ -796,7 +754,7 @@ export default function VetAcademyPortal({ onBack }: VetAcademyPortalProps) {
                         <li>Go to M-Pesa &gt; Lipa na M-Pesa &gt; Pay Bill.</li>
                         <li>Business Number: <strong className="font-mono text-slate-800">{CPD_PAYBILL}</strong></li>
                         <li>Account Number: <strong className="font-mono text-slate-800">{CPD_ACCOUNT}</strong></li>
-                        <li>Amount: <strong className="text-slate-800">Ksh {selectedDates.length * CPD_FEE_PER_DAY}</strong></li>
+                        <li>Amount: <strong className="text-slate-800">Ksh {selectedDates.length * (enrollModule.ratePerDay ?? CPD_FEE_PER_DAY)}</strong></li>
                         <li>Enter your PIN and confirm. Copy the M-Pesa code from the SMS.</li>
                       </ol>
                     </div>
@@ -945,7 +903,7 @@ export default function VetAcademyPortal({ onBack }: VetAcademyPortalProps) {
                             {mod.code}
                           </span>
                           <span className="text-[10px] font-bold text-amber-800 bg-amber-50 px-2.5 py-1 rounded-full">
-                            {mod.credits} CPD Credits
+                            Ksh {mod.ratePerDay ?? CPD_FEE_PER_DAY} / day
                           </span>
                         </div>
                         <h4 className="font-serif text-base font-bold text-slate-900 leading-tight">
