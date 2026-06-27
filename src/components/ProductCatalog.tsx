@@ -1,21 +1,68 @@
 import { useState, useMemo, MouseEvent, useEffect } from 'react';
 import { Product } from '../types';
 import { useContent } from '../store/contentStore';
-import { Search, Info, Star, Plus, Check, HelpCircle, X, Leaf, ShieldAlert } from 'lucide-react';
+import { Plus, Check, ChevronRight } from 'lucide-react';
 import { handleImageError } from '../imageFallback';
+
+export type CategoryTab = 'all' | 'crop-health' | 'animal-health' | 'equipment' | 'seeds';
+
+// Single source of truth for the catalog categories (nav, routing, tabs).
+export const PRODUCT_CATEGORIES: { key: CategoryTab; slug: string; label: string }[] = [
+  { key: 'all', slug: '', label: 'All Products' },
+  { key: 'crop-health', slug: 'crop-health', label: 'Crop Health' },
+  { key: 'animal-health', slug: 'animal-health', label: 'Animal Health' },
+  { key: 'seeds', slug: 'seeds', label: 'Seeds & Grains' },
+  { key: 'equipment', slug: 'equipment', label: 'Farm Equipment' },
+];
+
+export type SortOption = 'featured' | 'latest' | 'price-asc' | 'price-desc' | 'rating';
+
+export const SORT_OPTIONS: { value: SortOption; label: string }[] = [
+  { value: 'featured', label: 'Featured' },
+  { value: 'latest', label: 'Latest' },
+  { value: 'price-asc', label: 'Price: Low to High' },
+  { value: 'price-desc', label: 'Price: High to Low' },
+  { value: 'rating', label: 'Top Rated' },
+];
 
 interface ProductCatalogProps {
   onAddToCart: (product: Product, quantity?: number) => void;
+  onSelectProduct: (product: Product) => void;
+  variant?: 'home' | 'page';
+  initialCategory?: CategoryTab;
+  onCategoryChange?: (cat: CategoryTab) => void;
+  // When provided, sorting/search are controlled by the parent (e.g. rendered in the breadcrumb/banner).
+  sortBy?: SortOption;
+  onSortChange?: (sort: SortOption) => void;
+  searchQuery?: string;
+  onSearchChange?: (query: string) => void;
+  // Home preview: number of latest products to show + "View all" handler.
+  previewLimit?: number;
+  onViewAll?: () => void;
 }
 
-type CategoryTab = 'all' | 'crop-health' | 'animal-health' | 'equipment' | 'seeds';
-
-export default function ProductCatalog({ onAddToCart }: ProductCatalogProps) {
+export default function ProductCatalog({
+  onAddToCart,
+  onSelectProduct,
+  variant = 'home',
+  initialCategory = 'all',
+  sortBy: controlledSortBy,
+  searchQuery: controlledSearch,
+  previewLimit = 20,
+  onViewAll,
+}: ProductCatalogProps) {
   const { products: PRODUCTS } = useContent();
-  const [activeTab, setActiveTab] = useState<CategoryTab>('all');
-  const [searchQuery, setSearchQuery] = useState('');
-  const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
-  const [modalQuantity, setModalQuantity] = useState(1);
+  const isPage = variant === 'page';
+  const [activeTab, setActiveTab] = useState<CategoryTab>(initialCategory);
+
+  // Keep the tab in sync when the category changes via the URL (page variant).
+  useEffect(() => {
+    setActiveTab(initialCategory);
+  }, [initialCategory]);
+
+  // Sort/search are driven by the parent (breadcrumb + banner on the page; unused on home).
+  const searchQuery = controlledSearch ?? '';
+  const sortBy = controlledSortBy ?? 'featured';
   const [addedItemNotificationId, setAddedItemNotificationId] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -34,16 +81,35 @@ export default function ProductCatalog({ onAddToCart }: ProductCatalogProps) {
       setIsLoading(false);
     }, 600);
     return () => clearTimeout(timer);
-  }, [activeTab, searchQuery]);
+  }, [activeTab, searchQuery, sortBy]);
 
   const filteredProducts = useMemo(() => {
-    return PRODUCTS.filter((product) => {
+    const matched = PRODUCTS.filter((product) => {
       const matchesTab = activeTab === 'all' || product.category === activeTab;
       const matchesSearch = product.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
                             product.description.toLowerCase().includes(searchQuery.toLowerCase());
       return matchesTab && matchesSearch;
     });
-  }, [activeTab, searchQuery, PRODUCTS]);
+
+    switch (sortBy) {
+      case 'price-asc':
+        return [...matched].sort((a, b) => a.price - b.price);
+      case 'price-desc':
+        return [...matched].sort((a, b) => b.price - a.price);
+      case 'rating':
+        return [...matched].sort((a, b) => b.rating - a.rating);
+      case 'latest':
+        // No timestamps available; treat later catalog entries as newest.
+        return [...matched].reverse();
+      default:
+        return matched;
+    }
+  }, [activeTab, searchQuery, sortBy, PRODUCTS]);
+
+  // On the landing page show only the latest products as a preview.
+  const displayedProducts = isPage
+    ? filteredProducts
+    : [...filteredProducts].reverse().slice(0, previewLimit);
 
   const handleQuickAdd = (product: Product, e: MouseEvent) => {
     e.stopPropagation();
@@ -55,77 +121,39 @@ export default function ProductCatalog({ onAddToCart }: ProductCatalogProps) {
     }, 1500);
   };
 
-  const handleOpenDetails = (product: Product) => {
-    setSelectedProduct(product);
-    setModalQuantity(1);
-  };
-
-  const handleCloseDetails = () => {
-    setSelectedProduct(null);
-  };
-
-  const handleModalAdd = () => {
-    if (selectedProduct) {
-      onAddToCart(selectedProduct, modalQuantity);
-      setAddedItemNotificationId(selectedProduct.id);
-      setTimeout(() => {
-        setAddedItemNotificationId(null);
-      }, 1500);
-      handleCloseDetails();
-    }
-  };
-
   return (
-    <section id="products-catalog-section" className="py-20 bg-emerald-50">
+    <section id="products-catalog-section" className={isPage ? 'py-8 bg-emerald-50' : 'py-20 bg-emerald-50'}>
       <div className="container mx-auto px-6">
-        {/* Header Block */}
-        <div className="text-center max-w-3xl mx-auto mb-16 space-y-4">
-          <span className="text-xs md:text-sm font-bold tracking-widest text-emerald-600 uppercase">Certified Catalog</span>
-          <h2 className="font-serif text-3xl md:text-5xl font-medium tracking-tight text-emerald-950">
-            High-Yield Farming Products
-          </h2>
-          <p className="text-emerald-800 font-sans text-sm md:text-base">
-            Browse our wide range of KEBS & PCPB fully-certified fertilizers, premium seeds, veterinary medicines, and modern farm tools available for delivery.
-          </p>
-        </div>
-
-        {/* Toolbar: Tabs & Search */}
-        <div className="flex flex-col lg:flex-row justify-between items-stretch lg:items-center gap-6 mb-12 bg-white p-4 rounded-3xl border border-emerald-900/10 shadow-sm">
-          {/* Tabs */}
-          <div className="flex flex-wrap gap-2">
-            {(['all', 'crop-health', 'animal-health', 'seeds', 'equipment'] as const).map((tab) => (
-              <button
-                id={`tab-btn-${tab}`}
-                key={tab}
-                onClick={() => setActiveTab(tab)}
-                className={`px-3.5 py-2 md:px-5 md:py-3 rounded-2xl text-[11px] md:text-sm font-semibold tracking-wide whitespace-nowrap transition-all duration-200 ${
-                  activeTab === tab
-                    ? 'bg-emerald-600 text-white shadow-md'
-                    : 'bg-emerald-50/50 text-emerald-800 hover:bg-emerald-50 hover:text-emerald-950'
-                }`}
-              >
-                {tab === 'all' && 'All Products'}
-                {tab === 'crop-health' && 'Crop Health'}
-                {tab === 'animal-health' && 'Animal Health'}
-                {tab === 'seeds' && 'Seeds & Grains'}
-                {tab === 'equipment' && 'Farm Equipment'}
-              </button>
-            ))}
+        {/* Header Block (home only — the page variant shows a breadcrumb banner instead) */}
+        {!isPage && (
+          <div className="flex flex-col md:flex-row md:items-end justify-between mb-8 md:mb-16 gap-4">
+            <div className="space-y-4 max-w-xl text-left">
+              <span className="text-xs md:text-sm font-bold tracking-widest text-emerald-600 uppercase">Certified Catalog</span>
+              <div className="flex items-end justify-between gap-3">
+                <h2 className="font-serif text-3xl md:text-5xl font-medium tracking-tight text-emerald-950">
+                  High-Yield Farming Products
+                </h2>
+                <button
+                  onClick={onViewAll}
+                  className="md:hidden text-[11px] font-bold text-emerald-700 hover:text-emerald-600 transition flex items-center gap-1 border-b border-emerald-700 pb-1 shrink-0 cursor-pointer"
+                >
+                  <span>View all</span>
+                  <ChevronRight className="w-3.5 h-3.5" />
+                </button>
+              </div>
+              <p className="text-emerald-800 font-sans text-sm md:text-base">
+                Browse our wide range of KEBS & PCPB fully-certified fertilizers, premium seeds, veterinary medicines, and modern farm tools available for delivery.
+              </p>
+            </div>
+            <button
+              onClick={onViewAll}
+              className="hidden md:flex text-xs font-bold text-emerald-700 hover:text-emerald-600 transition items-center space-x-1 border-b border-emerald-700 pb-1 self-start shrink-0 cursor-pointer"
+            >
+              <span>View all products</span>
+              <ChevronRight className="w-3.5 h-3.5" />
+            </button>
           </div>
-
-          {/* Search Box */}
-          <div className="relative flex-1 lg:max-w-md">
-            <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-emerald-600" />
-            <input
-              id="product-search-input"
-              type="text"
-              placeholder="Search agrochemicals, fertilizers..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-11 pr-4 py-3 rounded-2xl border border-emerald-900/15 bg-emerald-50/20 text-emerald-950 focus:border-emerald-600 focus:bg-white outline-none text-sm transition-all"
-            />
-          </div>
-        </div>
+        )}
 
         {/* Product Grid */}
         {isLoading ? (
@@ -170,18 +198,18 @@ export default function ProductCatalog({ onAddToCart }: ProductCatalogProps) {
               </div>
             ))}
           </div>
-        ) : filteredProducts.length === 0 ? (
+        ) : displayedProducts.length === 0 ? (
           <div className="text-center py-24 bg-white rounded-3xl border border-emerald-900/5 shadow-inner">
             <p className="text-emerald-800 text-lg font-medium">No certified products match your criteria.</p>
             <p className="text-emerald-600/70 text-sm mt-1">Please try clearing your search query or choosing another tab.</p>
           </div>
         ) : (
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 md:gap-8">
-            {filteredProducts.map((product) => (
+            {displayedProducts.map((product) => (
               <article
                 id={`product-card-${product.id}`}
                 key={product.id}
-                onClick={() => handleOpenDetails(product)}
+                onClick={() => onSelectProduct(product)}
                 className="group bg-white rounded-3xl border border-emerald-900/10 shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300 cursor-pointer overflow-hidden flex flex-col h-full"
               >
                 {/* Image Section */}
@@ -264,115 +292,6 @@ export default function ProductCatalog({ onAddToCart }: ProductCatalogProps) {
                 </div>
               </article>
             ))}
-          </div>
-        )}
-
-        {/* Product Details Modal Overlay */}
-        {selectedProduct && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-emerald-950/40 backdrop-blur-md">
-            <div className="bg-white rounded-[32px] w-full max-w-2xl overflow-hidden shadow-2xl relative border border-emerald-900/10 max-h-[90vh] flex flex-col">
-              
-              {/* Header Close */}
-              <button
-                id="modal-close-btn"
-                onClick={handleCloseDetails}
-                className="absolute top-5 right-5 z-10 w-9 h-9 rounded-full bg-emerald-50 hover:bg-emerald-100 text-emerald-900 flex items-center justify-center transition"
-              >
-                <X className="w-4 h-4" />
-              </button>
-
-              <div className="overflow-y-auto flex-1">
-                <div className="grid grid-cols-1 md:grid-cols-2">
-                  {/* Photo Side */}
-                  <div className="relative h-64 md:h-full min-h-[250px] bg-emerald-50">
-                    <img
-                      src={selectedProduct.image}
-                      alt={selectedProduct.name}
-                      className="w-full h-full object-cover"
-                      referrerPolicy="no-referrer"
-                      onError={handleImageError}
-                    />
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent" />
-                    
-                    <div className="absolute bottom-6 left-6 text-white space-y-1">
-                      <span className="text-[9px] font-extrabold uppercase tracking-widest bg-emerald-600 px-2.5 py-1 rounded-full">
-                        {selectedProduct.category.replace('-', ' ')}
-                      </span>
-                      <p className="text-xs text-white/80 mt-2">Verified genuine product</p>
-                    </div>
-                  </div>
-
-                  {/* Information Details Side */}
-                  <div className="p-8 space-y-6">
-                    <div className="space-y-2">
-                      <h3 className="font-serif text-2xl font-medium text-emerald-950">{selectedProduct.name}</h3>
-                      <div className="flex items-center justify-between">
-                        <span className="text-xl font-bold text-emerald-900">
-                          KSh {selectedProduct.price.toLocaleString()}
-                        </span>
-                        <div className="flex items-center text-xs">
-                          <span className="text-yellow-500 font-semibold mr-1">★</span>
-                          <span className="font-bold text-emerald-950">{selectedProduct.rating}</span>
-                          <span className="text-emerald-600/60 ml-1">({selectedProduct.reviewsCount} farm reviews)</span>
-                        </div>
-                      </div>
-                    </div>
-
-                    <div className="space-y-1">
-                      <span className="text-[10px] font-bold text-emerald-600 tracking-wider uppercase">Description</span>
-                      <p className="text-emerald-800 text-xs md:text-sm leading-relaxed">
-                        {selectedProduct.description}
-                      </p>
-                    </div>
-
-                    {/* Guidelines and Safety */}
-                    <div className="bg-emerald-50 p-4 rounded-2xl border border-emerald-900/5 space-y-3">
-                      <div className="flex items-center space-x-2 text-emerald-900">
-                        <Leaf className="w-4 h-4 text-emerald-600 shrink-0" />
-                        <span className="text-xs font-bold uppercase tracking-wide">Usage Guideline</span>
-                      </div>
-                      <p className="text-[11px] text-emerald-800 leading-relaxed">
-                        Store in a cool dry place, out of reach of children. Wear protective mask and gloves while spraying or handling. For best results, dilute precisely as stated on container.
-                      </p>
-                    </div>
-
-                    {/* Quantity Selector & Add */}
-                    <div className="space-y-3 pt-2">
-                      <div className="flex items-center justify-between">
-                        <span className="text-xs font-bold text-emerald-950">Select Quantity</span>
-                        <div className="flex items-center border border-emerald-900/15 rounded-xl overflow-hidden">
-                          <button
-                            id="modal-qty-minus"
-                            onClick={() => setModalQuantity(q => Math.max(1, q - 1))}
-                            className="px-3 py-1 bg-emerald-50 text-emerald-900 font-bold hover:bg-emerald-100 transition"
-                          >
-                            -
-                          </button>
-                          <span className="px-4 py-1 text-xs font-bold text-emerald-950">{modalQuantity}</span>
-                          <button
-                            id="modal-qty-plus"
-                            onClick={() => setModalQuantity(q => q + 1)}
-                            className="px-3 py-1 bg-emerald-50 text-emerald-900 font-bold hover:bg-emerald-100 transition"
-                          >
-                            +
-                          </button>
-                        </div>
-                      </div>
-
-                      <button
-                        id="modal-add-to-cart-btn"
-                        onClick={handleModalAdd}
-                        className="w-full btn bg-emerald-600 text-white font-semibold py-3.5 rounded-2xl hover:bg-emerald-500 shadow-md transition"
-                      >
-                        Add {modalQuantity} to Cart • KSh {(selectedProduct.price * modalQuantity).toLocaleString()}
-                      </button>
-                    </div>
-
-                  </div>
-                </div>
-              </div>
-
-            </div>
           </div>
         )}
 

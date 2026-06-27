@@ -3,7 +3,9 @@ import { Product, CartItem } from './types';
 import { useContent } from './store/contentStore';
 import AdminPortal from './components/AdminPortal';
 import HeroSlider from './components/HeroSlider';
-import ProductCatalog from './components/ProductCatalog';
+import ProductCatalog, { PRODUCT_CATEGORIES, CategoryTab, SortOption, SORT_OPTIONS } from './components/ProductCatalog';
+import ProductDetail from './components/ProductDetail';
+import FilterDropdown from './components/FilterDropdown';
 import CartDrawer from './components/CartDrawer';
 import FAQSection from './components/FAQSection';
 import BlogSection from './components/BlogSection';
@@ -16,7 +18,7 @@ import {
   Phone, MapPin, Mail, Clock, Facebook, Instagram, Linkedin, 
   ChevronRight, ArrowUp, Send, CheckCircle, Award, Users, 
   HelpCircle, MessageCircle, Heart, Star, Truck, HeartHandshake, Leaf, ShieldAlert,
-  ShoppingCart, Stethoscope, FlaskConical, Menu, X, ChevronDown
+  ShoppingCart, Stethoscope, FlaskConical, Menu, X, ChevronDown, Search
 } from 'lucide-react';
 
 // Build a URL-friendly slug from a blog title, e.g. /blog/how-to-apply-npk
@@ -27,19 +29,38 @@ const slugify = (text: string) =>
     .replace(/^-+|-+$/g, '');
 
 export default function App() {
-  const { blogs: BLOGS } = useContent();
+  const { blogs: BLOGS, products: PRODUCTS } = useContent();
   const [cartItems, setCartItems] = useState<CartItem[]>([]);
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [getInTouchTab, setGetInTouchTab] = useState<'inquiry' | 'support'>('inquiry');
   const [getInTouchService, setGetInTouchService] = useState<'vet' | 'soil' | 'agronomy' | 'delivery'>('vet');
+  const [productSort, setProductSort] = useState<SortOption>('featured');
+  const [productSearch, setProductSearch] = useState('');
   
   // Path Router State
   const [currentPath, setCurrentPath] = useState(window.location.pathname);
   const [isAcademyDropdownOpen, setIsAcademyDropdownOpen] = useState(false);
   const isAdminRoute = currentPath.startsWith('/maxim/admin');
-  const isContactsRoute = currentPath === '/contacts';
+  const isContactsRoute = currentPath === '/getintouch';
   const isAcademyRoute = currentPath === '/vets' || currentPath === '/farmers' || isAdminRoute;
+
+  // Dedicated products page, e.g. /products or /products/animal-health
+  const isProductsRoute = currentPath === '/products' || currentPath.startsWith('/products/');
+  const productCategorySlug = currentPath.startsWith('/products/')
+    ? decodeURIComponent(currentPath.slice('/products/'.length))
+    : '';
+  const activeProductCategory =
+    PRODUCT_CATEGORIES.find((c) => c.slug === productCategorySlug) ?? PRODUCT_CATEGORIES[0];
+
+  // Dedicated single-product page, e.g. /product/crop-1
+  const productId = currentPath.startsWith('/product/')
+    ? decodeURIComponent(currentPath.slice('/product/'.length))
+    : null;
+  const selectedProduct = productId
+    ? (PRODUCTS.find((p) => p.id === productId) ?? null)
+    : null;
+  const openProduct = (p: Product) => navigate('/product/' + p.id);
 
   // Derive the active blog post from the URL, e.g. /blog/<slug>
   const blogSlug = currentPath.startsWith('/blog/')
@@ -149,12 +170,12 @@ export default function App() {
   const handleOpenBooking = (service: 'vet' | 'soil' | 'agronomy' | 'delivery') => {
     setGetInTouchTab('support');
     setGetInTouchService(service);
-    navigate('/contacts');
+    navigate('/getintouch');
   };
 
   const openContacts = (tab: 'inquiry' | 'support' = 'inquiry') => {
     setGetInTouchTab(tab);
-    navigate('/contacts');
+    navigate('/getintouch');
   };
 
   const handleNewsletterSubmit = (e: FormEvent) => {
@@ -249,54 +270,41 @@ export default function App() {
             {/* Certified Catalog dropdown */}
             <div className="relative group py-2">
               <a
-                href="#products-catalog-section"
-                onClick={(e) => handleNavLinkClick(e, 'products-catalog-section')}
+                href="/products"
+                onClick={(e) => {
+                  e.preventDefault();
+                  navigate('/products');
+                }}
                 className="flex items-center space-x-1 px-4 py-2 rounded-full text-xs font-bold text-emerald-950 hover:bg-emerald-50 hover:text-emerald-700 transition cursor-pointer"
               >
                 <span>Certified Catalog</span>
                 <ChevronDown className="w-3.5 h-3.5 text-emerald-950/70 transition-transform group-hover:rotate-180" />
               </a>
               <div className="absolute top-full left-0 mt-1 w-52 bg-white border border-emerald-900/10 rounded-2xl shadow-xl py-2 z-50 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200">
-                {['Crop Protection', 'Biological Fungicides', 'Dairy Cow Boosters', 'Field Spray Pumps', 'High-Yield Seeds'].map((label) => (
+                {PRODUCT_CATEGORIES.map((cat) => (
                   <a
-                    key={label}
-                    href="#products-catalog-section"
-                    onClick={(e) => handleNavLinkClick(e, 'products-catalog-section')}
+                    key={cat.key}
+                    href={cat.slug ? `/products/${cat.slug}` : '/products'}
+                    onClick={(e) => {
+                      e.preventDefault();
+                      navigate(cat.slug ? `/products/${cat.slug}` : '/products');
+                    }}
                     className="block px-4 py-2.5 text-xs font-bold text-emerald-950 hover:bg-emerald-50 hover:text-emerald-700 transition"
                   >
-                    {label}
+                    {cat.label}
                   </a>
                 ))}
               </div>
             </div>
 
-            {/* Farming Services dropdown */}
-            <div className="relative group py-2">
-              <a
-                href="#services-highlights-section"
-                onClick={(e) => handleNavLinkClick(e, 'services-highlights-section')}
-                className="flex items-center space-x-1 px-4 py-2 rounded-full text-xs font-bold text-emerald-950 hover:bg-emerald-50 hover:text-emerald-700 transition cursor-pointer"
-              >
-                <span>Farming Services</span>
-                <ChevronDown className="w-3.5 h-3.5 text-emerald-950/70 transition-transform group-hover:rotate-180" />
-              </a>
-              <div className="absolute top-full left-0 mt-1 w-52 bg-white border border-emerald-900/10 rounded-2xl shadow-xl py-2 z-50 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200">
-                {([
-                  { label: 'Veterinary Booking', key: 'vet' },
-                  { label: 'Soil Lab Sampling', key: 'soil' },
-                  { label: 'Agronomy Guidance', key: 'agronomy' },
-                  { label: 'Cooperative Dispatch', key: 'delivery' },
-                ] as const).map((s) => (
-                  <button
-                    key={s.key}
-                    onClick={() => handleOpenBooking(s.key)}
-                    className="block w-full text-left px-4 py-2.5 text-xs font-bold text-emerald-950 hover:bg-emerald-50 hover:text-emerald-700 transition cursor-pointer"
-                  >
-                    {s.label}
-                  </button>
-                ))}
-              </div>
-            </div>
+            {/* Farming Services link */}
+            <a
+              href="#services-highlights-section"
+              onClick={(e) => handleNavLinkClick(e, 'services-highlights-section')}
+              className="px-4 py-2 rounded-full text-xs font-bold text-emerald-950 hover:bg-emerald-50 hover:text-emerald-700 transition cursor-pointer"
+            >
+              Farming Services
+            </a>
             <div 
               className="relative group py-2"
               onMouseEnter={() => setIsAcademyDropdownOpen(true)}
@@ -394,11 +402,10 @@ export default function App() {
         {/* Mobile Navigation Dropdown Menu */}
         {isMobileMenuOpen && (
           <div className="lg:hidden border-t border-emerald-900/5 bg-white shadow-inner transition-all duration-300">
-            <nav className="container mx-auto px-6 py-4 flex flex-col space-y-2">
+            <nav className="container mx-auto px-6 py-3 flex flex-col space-y-0.5">
               {[
                 { label: 'Home', href: '#hero-slider-container' },
                 { label: 'About Us', href: '#about-us-section' },
-                { label: 'Certified Catalog', href: '#products-catalog-section' },
               ].map((link) => (
                 <a
                   key={link.label}
@@ -407,61 +414,46 @@ export default function App() {
                     setIsMobileMenuOpen(false);
                     handleNavLinkClick(e, link.href.slice(1));
                   }}
-                  className="px-4 py-2.5 rounded-xl text-xs font-bold text-emerald-950 hover:bg-emerald-50 hover:text-emerald-700 transition"
+                  className="px-4 py-2 rounded-xl text-xs font-bold text-emerald-950 hover:bg-emerald-50 hover:text-emerald-700 transition"
                 >
                   {link.label}
                 </a>
               ))}
 
-              {/* Catalog Ranges Mobile Submenu */}
-              <div className="border-t border-emerald-900/5 pt-2 mt-2">
-                <span className="px-4 text-[10px] font-bold uppercase tracking-wider text-emerald-600 block mb-1">
-                  Catalog Ranges
-                </span>
-                {['Crop Protection', 'Biological Fungicides', 'Dairy Cow Boosters', 'Field Spray Pumps', 'High-Yield Seeds'].map((label) => (
-                  <a
-                    key={label}
-                    href="#products-catalog-section"
-                    onClick={(e) => {
-                      setIsMobileMenuOpen(false);
-                      handleNavLinkClick(e, 'products-catalog-section');
-                    }}
-                    className="flex items-center justify-between px-4 py-2.5 rounded-xl text-xs font-bold text-emerald-950 hover:bg-emerald-50 hover:text-emerald-700 transition"
-                  >
-                    <span>{label}</span>
-                    <ChevronRight className="w-3.5 h-3.5 text-emerald-600" />
-                  </a>
-                ))}
+              {/* Certified Catalog Mobile Link */}
+              <div className="border-t border-emerald-900/5 pt-1.5 mt-1.5">
+                <a
+                  href="/products"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    setIsMobileMenuOpen(false);
+                    navigate('/products');
+                  }}
+                  className="flex items-center justify-between px-4 py-2 rounded-xl text-xs font-bold text-emerald-950 hover:bg-emerald-50 hover:text-emerald-700 transition"
+                >
+                  <span>Certified Catalog</span>
+                  <ChevronRight className="w-3.5 h-3.5 text-emerald-600" />
+                </a>
               </div>
 
-              {/* Farming Services Mobile Submenu */}
-              <div className="border-t border-emerald-900/5 pt-2 mt-2">
-                <span className="px-4 text-[10px] font-bold uppercase tracking-wider text-emerald-600 block mb-1">
-                  Farming Services
-                </span>
-                {([
-                  { label: 'Veterinary Booking', key: 'vet' },
-                  { label: 'Soil Lab Sampling', key: 'soil' },
-                  { label: 'Agronomy Guidance', key: 'agronomy' },
-                  { label: 'Cooperative Dispatch', key: 'delivery' },
-                ] as const).map((s) => (
-                  <button
-                    key={s.key}
-                    onClick={() => {
-                      setIsMobileMenuOpen(false);
-                      handleOpenBooking(s.key);
-                    }}
-                    className="flex items-center justify-between w-full text-left px-4 py-2.5 rounded-xl text-xs font-bold text-emerald-950 hover:bg-emerald-50 hover:text-emerald-700 transition"
-                  >
-                    <span>{s.label}</span>
-                    <ChevronRight className="w-3.5 h-3.5 text-emerald-600" />
-                  </button>
-                ))}
+              {/* Farming Services Mobile Link */}
+              <div className="border-t border-emerald-900/5 pt-1.5 mt-1.5">
+                <a
+                  href="#services-highlights-section"
+                  onClick={(e) => {
+                    setIsMobileMenuOpen(false);
+                    handleNavLinkClick(e, 'services-highlights-section');
+                  }}
+                  className="flex items-center justify-between px-4 py-2 rounded-xl text-xs font-bold text-emerald-950 hover:bg-emerald-50 hover:text-emerald-700 transition"
+                >
+                  <span>Farming Services</span>
+                  <ChevronRight className="w-3.5 h-3.5 text-emerald-600" />
+                </a>
               </div>
 
               {/* Academy Mobile Submenu */}
-              <div className="border-t border-emerald-900/5 pt-2 mt-2">
-                <span className="px-4 text-[10px] font-bold uppercase tracking-wider text-emerald-600 block mb-1">
+              <div className="border-t border-emerald-900/5 pt-1.5 mt-1.5">
+                <span className="px-4 text-[10px] font-bold uppercase tracking-wider text-emerald-600 block mb-0.5">
                   Academy Portals
                 </span>
                 <a
@@ -471,7 +463,7 @@ export default function App() {
                     setIsMobileMenuOpen(false);
                     navigate('/vets');
                   }}
-                  className="flex items-center justify-between px-4 py-2.5 rounded-xl text-xs font-bold text-emerald-950 hover:bg-emerald-50 hover:text-emerald-700 transition"
+                  className="flex items-center justify-between px-4 py-2 rounded-xl text-xs font-bold text-emerald-950 hover:bg-emerald-50 hover:text-emerald-700 transition"
                 >
                   <span>Vet Academy</span>
                   <ChevronRight className="w-3.5 h-3.5 text-emerald-600" />
@@ -483,7 +475,7 @@ export default function App() {
                     setIsMobileMenuOpen(false);
                     navigate('/farmers');
                   }}
-                  className="flex items-center justify-between px-4 py-2.5 rounded-xl text-xs font-bold text-emerald-950 hover:bg-emerald-50 hover:text-emerald-700 transition"
+                  className="flex items-center justify-between px-4 py-2 rounded-xl text-xs font-bold text-emerald-950 hover:bg-emerald-50 hover:text-emerald-700 transition"
                 >
                   <span>Farmers Academy</span>
                   <ChevronRight className="w-3.5 h-3.5 text-emerald-600" />
@@ -494,19 +486,19 @@ export default function App() {
                     setIsMobileMenuOpen(false);
                     handleNavLinkClick(e, 'blog-section-wrapper');
                   }}
-                  className="flex items-center justify-between px-4 py-2.5 rounded-xl text-xs font-bold text-emerald-950 hover:bg-emerald-50 hover:text-emerald-700 transition"
+                  className="flex items-center justify-between px-4 py-2 rounded-xl text-xs font-bold text-emerald-950 hover:bg-emerald-50 hover:text-emerald-700 transition"
                 >
                   <span>Academy Blog</span>
                   <ChevronRight className="w-3.5 h-3.5 text-emerald-600" />
                 </a>
               </div>
-              <div className="pt-2 border-t border-emerald-900/5">
+              <div className="pt-2 mt-1.5 border-t border-emerald-900/5">
                 <button
                   onClick={() => {
                     setIsMobileMenuOpen(false);
                     openContacts('inquiry');
                   }}
-                  className="w-full text-center px-4 py-3 rounded-xl text-xs font-bold text-white bg-gradient-to-r from-emerald-600 to-emerald-500 hover:from-emerald-500 hover:to-emerald-400 shadow-md shadow-emerald-600/25 transition cursor-pointer"
+                  className="w-full text-center px-4 py-2.5 rounded-xl text-xs font-bold text-white bg-gradient-to-r from-emerald-600 to-emerald-500 hover:from-emerald-500 hover:to-emerald-400 shadow-md shadow-emerald-600/25 transition cursor-pointer"
                 >
                   Get In Touch
                 </button>
@@ -550,6 +542,105 @@ export default function App() {
           initialService={getInTouchService}
           onBack={() => navigate('/')}
         />
+      ) : selectedProduct ? (
+        <ProductDetail
+          product={selectedProduct}
+          onAddToCart={handleAddToCart}
+          onSelectProduct={openProduct}
+          onNavigate={navigate}
+        />
+      ) : isProductsRoute ? (
+        <main className="min-h-screen bg-emerald-50">
+          {/* Category banner with search */}
+          <div className="bg-gradient-to-r from-emerald-700 to-emerald-600">
+            <div className="container mx-auto px-6 py-6 md:py-10 flex flex-row items-center justify-between gap-3 md:gap-6">
+              <div className="min-w-0">
+                <span className="text-[11px] md:text-xs font-bold tracking-widest text-emerald-100/80 uppercase">Certified Catalog</span>
+                <h1 className="font-serif text-xl sm:text-2xl md:text-4xl font-medium text-white mt-1 truncate">
+                  {activeProductCategory.key === 'all' ? 'All Products' : activeProductCategory.label}
+                </h1>
+              </div>
+
+              <div className="relative w-1/2 max-w-sm shrink-0">
+                <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-white/70" />
+                <input
+                  id="banner-product-search"
+                  type="text"
+                  placeholder="Search agrochemicals, fertilizers..."
+                  value={productSearch}
+                  onChange={(e) => setProductSearch(e.target.value)}
+                  className="w-full pl-11 pr-4 py-3 rounded-2xl bg-white/15 border border-white/25 text-white placeholder:text-white/60 focus:bg-white/20 focus:border-white/50 outline-none text-sm transition-all"
+                />
+              </div>
+            </div>
+          </div>
+
+          {/* Breadcrumb (left) + Category/Sort (right) — below the banner label */}
+          <div className="bg-emerald-50">
+            <div className="container mx-auto px-6 py-3 flex items-center justify-between gap-3 text-[11px] font-semibold text-emerald-800/70">
+              <div className="flex items-center gap-1.5 min-w-0 overflow-hidden whitespace-nowrap">
+                <a
+                  href="/"
+                  onClick={(e) => { e.preventDefault(); navigate('/'); }}
+                  className="hover:text-emerald-700 transition"
+                >
+                  Home
+                </a>
+                <ChevronRight className="w-3.5 h-3.5 text-emerald-600/50" />
+                <a
+                  href="/products"
+                  onClick={(e) => { e.preventDefault(); navigate('/products'); }}
+                  className={`hover:text-emerald-700 transition ${activeProductCategory.key === 'all' ? 'text-emerald-900' : ''}`}
+                >
+                  Certified Catalog
+                </a>
+                {activeProductCategory.key !== 'all' && (
+                  <>
+                    <ChevronRight className="w-3.5 h-3.5 text-emerald-600/50" />
+                    <span className="text-emerald-900 truncate">{activeProductCategory.label}</span>
+                  </>
+                )}
+              </div>
+
+              {/* Category + Sort — compact custom dropdowns, matches link font */}
+              <div className="flex items-center gap-3 shrink-0">
+                <FilterDropdown
+                  id="breadcrumb-category-select"
+                  value={activeProductCategory.key}
+                  align="right"
+                  options={PRODUCT_CATEGORIES.map((c) => ({ value: c.key, label: c.label }))}
+                  onChange={(val) => {
+                    const target = PRODUCT_CATEGORIES.find((c) => c.key === val);
+                    navigate(target && target.slug ? `/products/${target.slug}` : '/products');
+                  }}
+                />
+                <span className="text-emerald-900/20">|</span>
+                <FilterDropdown
+                  id="breadcrumb-sort-select"
+                  value={productSort}
+                  align="right"
+                  options={SORT_OPTIONS.map((o) => ({ value: o.value, label: o.label }))}
+                  onChange={(val) => setProductSort(val as SortOption)}
+                />
+              </div>
+            </div>
+          </div>
+
+          <ProductCatalog
+            variant="page"
+            initialCategory={activeProductCategory.key}
+            onAddToCart={handleAddToCart}
+            onSelectProduct={openProduct}
+            sortBy={productSort}
+            onSortChange={setProductSort}
+            searchQuery={productSearch}
+            onSearchChange={setProductSearch}
+            onCategoryChange={(cat: CategoryTab) => {
+              const target = PRODUCT_CATEGORIES.find((c) => c.key === cat);
+              navigate(target && target.slug ? `/products/${target.slug}` : '/products');
+            }}
+          />
+        </main>
       ) : (
         <>
           {/* 3. HERO SLIDESHOW COMPONENT */}
@@ -574,7 +665,8 @@ export default function App() {
                   Explore Our Range
                 </h2>
                 <a
-                  href="#products-catalog-section"
+                  href="/products"
+                  onClick={(e) => { e.preventDefault(); navigate('/products'); }}
                   className="md:hidden text-[11px] font-bold text-emerald-700 hover:text-emerald-600 transition flex items-center gap-1 border-b border-emerald-700 pb-1 shrink-0"
                 >
                   <span>View all</span>
@@ -586,7 +678,8 @@ export default function App() {
               </p>
             </div>
             <a
-              href="#products-catalog-section"
+              href="/products"
+              onClick={(e) => { e.preventDefault(); navigate('/products'); }}
               className="hidden md:flex text-xs font-bold text-emerald-700 hover:text-emerald-600 transition items-center space-x-1 border-b border-emerald-700 pb-1 self-start shrink-0"
             >
               <span>View all inventory catalog</span>
@@ -599,7 +692,8 @@ export default function App() {
             
             {/* Box 1 (Large) */}
             <a
-              href="#products-catalog-section"
+              href="/products/crop-health"
+              onClick={(e) => { e.preventDefault(); navigate('/products/crop-health'); }}
               className="col-span-2 md:col-span-8 rounded-3xl sm:rounded-[32px] overflow-hidden relative min-h-[220px] sm:min-h-[300px] border border-emerald-900/10 shadow-sm group hover:shadow-lg transition-all"
             >
               <img
@@ -624,7 +718,8 @@ export default function App() {
 
             {/* Box 2 (Medium) */}
             <a
-              href="#products-catalog-section"
+              href="/products/animal-health"
+              onClick={(e) => { e.preventDefault(); navigate('/products/animal-health'); }}
               className="col-span-2 md:col-span-4 rounded-3xl sm:rounded-[32px] overflow-hidden relative min-h-[200px] sm:min-h-[300px] border border-emerald-900/10 shadow-sm group hover:shadow-lg transition-all"
             >
               <img
@@ -649,7 +744,8 @@ export default function App() {
 
             {/* Box 3 */}
             <a
-              href="#products-catalog-section"
+              href="/products/equipment"
+              onClick={(e) => { e.preventDefault(); navigate('/products/equipment'); }}
               className="col-span-1 md:col-span-4 rounded-3xl sm:rounded-[32px] overflow-hidden relative min-h-[150px] sm:min-h-[250px] border border-emerald-900/10 shadow-sm group hover:shadow-lg transition-all"
             >
               <img
@@ -671,7 +767,8 @@ export default function App() {
 
             {/* Box 4 */}
             <a
-              href="#products-catalog-section"
+              href="/products/seeds"
+              onClick={(e) => { e.preventDefault(); navigate('/products/seeds'); }}
               className="col-span-1 md:col-span-4 rounded-3xl sm:rounded-[32px] overflow-hidden relative min-h-[150px] sm:min-h-[250px] border border-emerald-900/10 shadow-sm group hover:shadow-lg transition-all"
             >
               <img
@@ -693,7 +790,8 @@ export default function App() {
 
             {/* Box 5 */}
             <a
-              href="#products-catalog-section"
+              href="/products/equipment"
+              onClick={(e) => { e.preventDefault(); navigate('/products/equipment'); }}
               className="col-span-2 md:col-span-4 rounded-3xl sm:rounded-[32px] overflow-hidden relative min-h-[150px] sm:min-h-[250px] border border-emerald-900/10 shadow-sm group hover:shadow-lg transition-all"
             >
               <img
@@ -718,7 +816,12 @@ export default function App() {
       </section>
 
       {/* 7. DETAILED PRODUCT CATALOG COMPONENT */}
-      <ProductCatalog onAddToCart={handleAddToCart} />
+      <ProductCatalog
+        onAddToCart={handleAddToCart}
+        onSelectProduct={openProduct}
+        previewLimit={20}
+        onViewAll={() => navigate('/products')}
+      />
 
       {/* 8. ABOUT US WITH VISUALS & LIVE COUNT COUNTERS */}
       <section id="about-us-section" className="py-24 bg-white relative overflow-hidden">

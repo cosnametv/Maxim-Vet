@@ -631,6 +631,7 @@ export default function AdminPortal({ onBack }: AdminPortalProps) {
               subtitle="Manage the product catalog shown on the storefront."
               search={search}
               setSearch={setSearch}
+              columns={3}
               onAdd={() =>
                 setEditor({
                   section: 'products',
@@ -647,7 +648,16 @@ export default function AdminPortal({ onBack }: AdminPortalProps) {
                   primary: p.name,
                   secondary: `${p.category} · KSh ${p.price.toLocaleString()}${
                     p.buyingPrice ? ` · Profit KSh ${(p.price - p.buyingPrice).toLocaleString()}` : ''
-                  } · ${p.stockStatus}`,
+                  }`,
+                  tag: {
+                    label: p.stockStatus,
+                    tone:
+                      p.stockStatus === 'Out of Stock'
+                        ? ('red' as const)
+                        : p.stockStatus === 'Low Stock'
+                        ? ('yellow' as const)
+                        : ('green' as const),
+                  },
                   onEdit: () =>
                     setEditor({
                       section: 'products',
@@ -681,6 +691,7 @@ export default function AdminPortal({ onBack }: AdminPortalProps) {
               subtitle="Manage the Farming Academy blog articles."
               search={search}
               setSearch={setSearch}
+              columns={2}
               onAdd={() => goAdmin('/maxim/admin/blogs/new')}
               items={store.blogs
                 .filter((b) => b.title.toLowerCase().includes(search.toLowerCase()))
@@ -708,6 +719,7 @@ export default function AdminPortal({ onBack }: AdminPortalProps) {
               subtitle="Manage the support-desk frequently asked questions."
               search={search}
               setSearch={setSearch}
+              columns={2}
               onAdd={() =>
                 setEditor({
                   section: 'faqs',
@@ -751,6 +763,7 @@ export default function AdminPortal({ onBack }: AdminPortalProps) {
               subtitle="Manage the continuous professional development modules in the Vet portal."
               search={search}
               setSearch={setSearch}
+              columns={2}
               onAdd={() =>
                 setEditor({
                   section: 'cpd',
@@ -890,9 +903,16 @@ interface ListRow {
   id: string;
   primary: string;
   secondary: string;
+  tag?: { label: string; tone: 'green' | 'yellow' | 'red' };
   onEdit: () => void;
   onDelete: () => void;
 }
+
+const TAG_TONES: Record<'green' | 'yellow' | 'red', string> = {
+  green: 'bg-emerald-50 text-emerald-700',
+  yellow: 'bg-amber-50 text-amber-700',
+  red: 'bg-rose-50 text-rose-700',
+};
 function CrudList({
   title,
   subtitle,
@@ -900,6 +920,7 @@ function CrudList({
   onAdd,
   search,
   setSearch,
+  columns,
 }: {
   title: string;
   subtitle: string;
@@ -907,6 +928,7 @@ function CrudList({
   onAdd: () => void;
   search: string;
   setSearch: (s: string) => void;
+  columns?: number;
 }) {
   return (
     <div className="space-y-5">
@@ -933,36 +955,77 @@ function CrudList({
         />
       </div>
 
-      <div className="space-y-2.5">
-        {items.length === 0 && (
-          <p className="text-sm text-slate-400 py-8 text-center">No items found.</p>
-        )}
-        {items.map((row) => (
-          <div
-            key={row.id}
-            className="bg-white rounded-2xl border border-slate-200 p-4 flex items-center gap-3 hover:shadow-sm transition"
-          >
-            <div className="min-w-0 flex-1">
-              <div className="text-sm font-bold text-emerald-950 truncate">{row.primary}</div>
-              <div className="text-xs text-slate-500 line-clamp-2">{row.secondary}</div>
+      {items.length === 0 ? (
+        <p className="text-sm text-slate-400 py-8 text-center">No items found.</p>
+      ) : columns ? (
+        <div className={`grid gap-3 ${columns === 2 ? 'grid-cols-1 sm:grid-cols-2' : 'grid-cols-2 lg:grid-cols-3'}`}>
+          {items.map((row) => (
+            <div
+              key={row.id}
+              className="group bg-white rounded-2xl border border-slate-200 p-4 flex flex-col gap-2.5 hover:shadow-md hover:border-emerald-200 transition"
+            >
+              <div className="min-w-0 flex-1">
+                <div className="text-sm font-bold text-emerald-950 line-clamp-2 leading-snug">{row.primary}</div>
+                <div className="text-[11px] text-slate-500 line-clamp-2 mt-1 leading-relaxed">{row.secondary}</div>
+              </div>
+              <div className="flex items-center justify-between gap-1.5 pt-2.5 border-t border-slate-100">
+                {row.tag ? (
+                  <span className={`inline-flex items-center gap-1.5 text-[10px] font-bold px-2 py-1 rounded-full ${TAG_TONES[row.tag.tone]}`}>
+                    <span className="w-1.5 h-1.5 rounded-full bg-current" />
+                    {row.tag.label}
+                  </span>
+                ) : (
+                  <span />
+                )}
+                <div className="flex items-center gap-1.5">
+                <button
+                  onClick={row.onEdit}
+                  className="w-7 h-7 rounded-md text-slate-400 hover:bg-emerald-50 hover:text-emerald-700 flex items-center justify-center transition"
+                  title="Edit"
+                >
+                  <Pencil className="w-3.5 h-3.5" />
+                </button>
+                <button
+                  onClick={row.onDelete}
+                  className="w-7 h-7 rounded-md text-slate-400 hover:bg-rose-50 hover:text-rose-600 flex items-center justify-center transition"
+                  title="Delete"
+                >
+                  <Trash2 className="w-3.5 h-3.5" />
+                </button>
+                </div>
+              </div>
             </div>
-            <button
-              onClick={row.onEdit}
-              className="w-9 h-9 rounded-lg bg-slate-50 hover:bg-emerald-50 text-slate-600 hover:text-emerald-700 flex items-center justify-center transition shrink-0"
-              title="Edit"
+          ))}
+        </div>
+      ) : (
+        <div className="space-y-2.5">
+          {items.map((row) => (
+            <div
+              key={row.id}
+              className="bg-white rounded-2xl border border-slate-200 p-4 flex items-center gap-3 hover:shadow-sm transition"
             >
-              <Pencil className="w-4 h-4" />
-            </button>
-            <button
-              onClick={row.onDelete}
-              className="w-9 h-9 rounded-lg bg-slate-50 hover:bg-rose-50 text-slate-600 hover:text-rose-600 flex items-center justify-center transition shrink-0"
-              title="Delete"
-            >
-              <Trash2 className="w-4 h-4" />
-            </button>
-          </div>
-        ))}
-      </div>
+              <div className="min-w-0 flex-1">
+                <div className="text-sm font-bold text-emerald-950 truncate">{row.primary}</div>
+                <div className="text-xs text-slate-500 line-clamp-2">{row.secondary}</div>
+              </div>
+              <button
+                onClick={row.onEdit}
+                className="w-9 h-9 rounded-lg bg-slate-50 hover:bg-emerald-50 text-slate-600 hover:text-emerald-700 flex items-center justify-center transition shrink-0"
+                title="Edit"
+              >
+                <Pencil className="w-4 h-4" />
+              </button>
+              <button
+                onClick={row.onDelete}
+                className="w-9 h-9 rounded-lg bg-slate-50 hover:bg-rose-50 text-slate-600 hover:text-rose-600 flex items-center justify-center transition shrink-0"
+                title="Delete"
+              >
+                <Trash2 className="w-4 h-4" />
+              </button>
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 }

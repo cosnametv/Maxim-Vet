@@ -1,7 +1,7 @@
 import React, { useState, useEffect, FormEvent } from 'react';
 import { 
   Mail, Phone, MapPin, Calendar, MessageSquare, 
-  CheckCircle2, Clock, Send, Shield, User, Building, Info 
+  CheckCircle2, Send, Shield, User, ChevronRight 
 } from 'lucide-react';
 
 interface GetInTouchPageProps {
@@ -84,92 +84,38 @@ export default function GetInTouchPage({ onBack, initialTab = 'inquiry', initial
   };
 
   return (
-    <main id="get-in-touch-view" className="bg-slate-50 min-h-screen py-10 md:py-16">
-      <div className="container mx-auto px-6">
-        <div className="max-w-6xl mx-auto">
-          
-          {/* Page Headers */}
-          <div className="text-left max-w-2xl mb-12 space-y-3">
-            <h1 className="font-serif text-3xl md:text-5xl font-semibold leading-tight text-emerald-950">
-              How Can We Help You Grow?
-            </h1>
-            <p className="text-emerald-900/75 text-sm md:text-base leading-relaxed">
-              Have a general inquiry about our PCPB-certified agrochemicals? Or do you need a licensed veterinary doctor to visit your farm? Choose the appropriate desk below.
-            </p>
-          </div>
+    <main id="get-in-touch-view" className="bg-emerald-50 min-h-screen">
+      {/* Banner */}
+      <div className="bg-gradient-to-r from-emerald-700 to-emerald-600">
+        <div className="container mx-auto px-6 py-8 md:py-12">
+          <span className="text-[11px] md:text-xs font-bold tracking-widest text-emerald-100/80 uppercase">Get In Touch</span>
+          <h1 className="font-serif text-2xl md:text-4xl font-medium text-white mt-1">
+            How Can We Help You Grow?
+          </h1>
+        </div>
+      </div>
 
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-start">
-            
-            {/* Left Column: Office info & Guidelines */}
-            <div className="order-2 lg:order-1 lg:col-span-5 space-y-8">
-              
-              {/* Office Card */}
-              <div className="bg-emerald-950 text-white p-8 rounded-[32px] border border-emerald-900 shadow-xl relative overflow-hidden text-left">
-                <div className="absolute top-0 right-0 w-32 h-32 bg-emerald-700/25 rounded-full blur-2xl pointer-events-none" />
-                
-                <h3 className="font-serif text-xl md:text-2xl font-medium text-emerald-300 mb-6">Nairobi Headquarters</h3>
-                
-                <div className="space-y-6 text-sm">
-                  <div className="flex items-start space-x-3">
-                    <MapPin className="w-5 h-5 text-emerald-400 shrink-0 mt-0.5" />
-                    <div>
-                      <p className="font-semibold text-emerald-200">Our Location</p>
-                      <p className="text-xs text-emerald-100/75 mt-1">
-                        Industrial Area Main Block, Commercial Street,<br />
-                        Nairobi, Kenya
-                      </p>
-                    </div>
-                  </div>
+      {/* Breadcrumb */}
+      <div className="bg-emerald-50">
+        <div className="container mx-auto px-6 py-3 flex items-center gap-2 text-xs font-semibold text-emerald-800/70">
+          <a
+            href="/"
+            onClick={(e) => { e.preventDefault(); onBack(); }}
+            className="hover:text-emerald-700 transition"
+          >
+            Home
+          </a>
+          <ChevronRight className="w-3.5 h-3.5 text-emerald-600/50" />
+          <span className="text-emerald-900">Get In Touch</span>
+        </div>
+      </div>
 
-                  <div className="flex items-start space-x-3">
-                    <Phone className="w-5 h-5 text-emerald-400 shrink-0 mt-0.5" />
-                    <div>
-                      <p className="font-semibold text-emerald-200">Call/WhatsApp Desk</p>
-                      <p className="text-xs text-emerald-100/75 mt-1">+254 712 345 678</p>
-                      <p className="text-[10px] text-emerald-300/70 mt-0.5">Mon–Sat: 7:30 AM – 6:00 PM</p>
-                    </div>
-                  </div>
+      {/* Content */}
+      <div className="container mx-auto px-6 pt-4 pb-12 md:pb-16">
+        <div className="max-w-3xl mx-auto">
 
-                  <div className="flex items-start space-x-3">
-                    <Mail className="w-5 h-5 text-emerald-400 shrink-0 mt-0.5" />
-                    <div>
-                      <p className="font-semibold text-emerald-200">Email Correspondence</p>
-                      <p className="text-xs text-emerald-100/75 mt-1">info@maximvet.co.ke</p>
-                    </div>
-                  </div>
-
-                  <div className="flex items-start space-x-3">
-                    <Clock className="w-5 h-5 text-emerald-400 shrink-0 mt-0.5" />
-                    <div>
-                      <p className="font-semibold text-emerald-200">Soil Sampling Hours</p>
-                      <p className="text-xs text-emerald-100/75 mt-1">Samples are accepted Monday to Friday: 8:00 AM – 4:00 PM</p>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="mt-8 pt-6 border-t border-emerald-900 flex justify-between items-center text-xs text-emerald-300/80">
-                  <span>PCPB Licensed Agribusiness</span>
-                  <span className="font-mono bg-emerald-900 px-2 py-1 rounded">Reg No: 0451</span>
-                </div>
-              </div>
-
-              {/* Informational Guidelines Card */}
-              <div className="bg-white p-6 rounded-3xl border border-emerald-950/5 text-left space-y-4">
-                <h4 className="font-bold text-xs uppercase tracking-wider text-emerald-950 flex items-center space-x-2">
-                  <Info className="w-4 h-4 text-emerald-600" />
-                  <span>Important Farmer Notices</span>
-                </h4>
-                <ul className="space-y-3 text-xs text-emerald-900/80 leading-relaxed list-disc list-inside">
-                  <li><strong>Veterinary Visits:</strong> KVB certified doctors carry medicine bags for direct diagnosis on bovine, caprine, or poultry flocks.</li>
-                  <li><strong>Soil Sample Kits:</strong> Use dry paper bags to bring soil samples; do not pack wet soil in polythene bags as it alters nitrogen values.</li>
-                  <li><strong>Delivery Tracking:</strong> Bulk orders &gt;15 bags qualify for free dispatch via county cooperative trucks.</li>
-                </ul>
-              </div>
-
-            </div>
-
-            {/* Right Column: Unified Form Section */}
-            <div className="order-1 lg:order-2 lg:col-span-7 bg-white p-6 md:p-10 rounded-[32px] border border-emerald-950/5 shadow-sm text-left">
+            {/* Unified Form Section */}
+            <div className="bg-white p-6 md:p-10 rounded-[32px] border border-emerald-950/5 shadow-sm text-left">
               
               {!submitSuccess ? (
                 <form onSubmit={handleFormSubmit} className="space-y-6">
@@ -430,8 +376,6 @@ export default function GetInTouchPage({ onBack, initialTab = 'inquiry', initial
               )}
 
             </div>
-
-          </div>
 
         </div>
       </div>
